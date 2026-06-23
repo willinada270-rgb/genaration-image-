@@ -1,8 +1,31 @@
 // api/chat.js — Function serverless Vercel
 // Cache la clé Anthropic et discute avec Claude Sonnet 4.6.
+// Supporte l'analyse d'images (vision) : un message peut contenir une image.
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-6";
+
+// Transforme un message { role, content, image? } au format attendu par l'API.
+// image = data URI "data:image/png;base64,XXXX"
+function toApiMessage(m) {
+  const text = m.content ? String(m.content) : "";
+
+  if (m.image && typeof m.image === "string" && m.image.startsWith("data:")) {
+    const match = m.image.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+    if (match) {
+      const blocks = [
+        {
+          type: "image",
+          source: { type: "base64", media_type: match[1], data: match[2] },
+        },
+      ];
+      if (text) blocks.push({ type: "text", text });
+      return { role: m.role, content: blocks };
+    }
+  }
+
+  return { role: m.role, content: text };
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -21,11 +44,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Aucun message fourni." });
     }
 
-    // On ne garde que role + content, et on limite l'historique envoyé.
     const clean = messages
-      .filter((m) => m && (m.role === "user" || m.role === "assistant") && m.content)
+      .filter((m) => m && (m.role === "user" || m.role === "assistant") && (m.content || m.image))
       .slice(-20)
-      .map((m) => ({ role: m.role, content: String(m.content) }));
+      .map(toApiMessage);
 
     const apiRes = await fetch(ANTHROPIC_URL, {
       method: "POST",
@@ -50,7 +72,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // La réponse est dans data.content (tableau de blocs); on concatène le texte.
     const text = Array.isArray(data.content)
       ? data.content.filter((b) => b.type === "text").map((b) => b.text).join("")
       : "";

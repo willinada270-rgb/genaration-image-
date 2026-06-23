@@ -5,20 +5,24 @@
 const MODELS = {
   image: {
     slug: "black-forest-labs/flux-2-pro",   // FLUX.2 Pro — image full qualité
-    buildInput: ({ prompt }) => ({
+    buildInput: ({ prompt, image, aspectRatio }) => ({
       prompt,
-      aspect_ratio: "16:9",
+      aspect_ratio: aspectRatio || "16:9",
       output_format: "png",
       safety_tolerance: 2,
+      // Image de référence à transformer (image-to-image). Le nom du paramètre
+      // dépend du modèle : sur FLUX c'est souvent "image_prompt" ou "input_image".
+      // Vérifie la page du modèle sur Replicate et ajuste si besoin.
+      ...(image ? { image_prompt: image } : {}),
     }),
   },
   video: {
     slug: "kwaivgi/kling-v2-master",         // Kling — vidéo full qualité
-    buildInput: ({ prompt, imageUrl }) => ({
+    buildInput: ({ prompt, image, aspectRatio }) => ({
       prompt,
       duration: 5,                            // secondes
-      aspect_ratio: "16:9",
-      ...(imageUrl ? { start_image: imageUrl } : {}), // image-to-video si fournie
+      aspect_ratio: aspectRatio || "16:9",
+      ...(image ? { start_image: image } : {}), // image-to-video si fournie
     }),
   },
 };
@@ -36,7 +40,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { type, prompt, imageUrl } = req.body || {};
+    const { type, prompt, aspectRatio } = req.body || {};
+    // image = data URI (data:image/...;base64,xxxx) envoyé par la page,
+    // ou imageUrl = ancienne URL publique (rétro-compatibilité).
+    const image = req.body?.image || req.body?.imageUrl;
 
     if (!type || !MODELS[type]) {
       return res.status(400).json({ error: "Type invalide (image ou video)." });
@@ -46,7 +53,7 @@ export default async function handler(req, res) {
     }
 
     const model = MODELS[type];
-    const input = model.buildInput({ prompt: prompt.trim(), imageUrl });
+    const input = model.buildInput({ prompt: prompt.trim(), image, aspectRatio });
 
     // 1) Créer la prédiction
     const createRes = await fetch(`${REPLICATE}/models/${model.slug}/predictions`, {
