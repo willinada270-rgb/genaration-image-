@@ -17,7 +17,7 @@ const MODELS = {
     }),
   },
   video: {
-    slug: "kwaivgi/kling-v2-master",         // Kling — vidéo full qualité
+    slug: "kwaivgi/kling-v2.1",               // Kling v2.1 — image-to-video (nécessite une image de départ)
     buildInput: ({ prompt, image, aspectRatio }) => ({
       prompt,
       duration: 5,                            // secondes
