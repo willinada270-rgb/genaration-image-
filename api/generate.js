@@ -18,9 +18,9 @@ const MODELS = {
   // Vidéo — Kling v3 (texte→vidéo et image→vidéo, audio, jusqu'à 15 s)
   video: {
     slug: "kwaivgi/kling-v3-video",
-    buildInput: ({ prompt, image, aspectRatio, duration }) => ({
+    buildInput: ({ prompt, image, aspectRatio, duration, resolution }) => ({
       prompt,
-      mode: "standard",                       // standard (720p) | pro (1080p)
+      mode: resolution === "720p" ? "standard" : "pro", // standard=720p, pro=1080p (4K → pro, max Kling)
       duration: duration || 5,                // 3 à 15 s
       aspect_ratio: aspectRatio || "16:9",
       generate_audio: false,
@@ -30,9 +30,9 @@ const MODELS = {
   // Vidéo à partir d'une vidéo — Kling v3 Omni (édition / animation)
   video_edit: {
     slug: "kwaivgi/kling-v3-omni-video",
-    buildInput: ({ prompt, video }) => ({
+    buildInput: ({ prompt, video, resolution }) => ({
       prompt,
-      mode: "standard",
+      mode: resolution === "720p" ? "standard" : "pro",
       reference_video: video,                 // .mp4/.mov, 3-10 s
       video_reference_type: "base",           // base = édition de la vidéo selon le prompt
     }),
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { type, prompt, aspectRatio, duration } = req.body || {};
+    const { type, prompt, aspectRatio, duration, resolution } = req.body || {};
     const image = req.body?.image || req.body?.imageUrl; // data URI ou URL
     const video = req.body?.video;                        // data URI ou URL (vidéo de départ)
 
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
     // Si une vidéo est fournie en mode vidéo, on passe sur le modèle d'édition (Omni).
     const key = type === "video" && video ? "video_edit" : type;
     const model = MODELS[key];
-    const input = model.buildInput({ prompt: prompt.trim(), image, video, aspectRatio, duration });
+    const input = model.buildInput({ prompt: prompt.trim(), image, video, aspectRatio, duration, resolution });
 
     // 1) Créer la prédiction
     const createRes = await fetch(`${REPLICATE}/models/${model.slug}/predictions`, {
