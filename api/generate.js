@@ -3,26 +3,38 @@
 //
 // >>> MODÈLES (vérifie/ajuste les slugs sur https://replicate.com selon ce qui est dispo) <<<
 const MODELS = {
+  // Image — FLUX.2 Pro
   image: {
-    slug: "black-forest-labs/flux-2-pro",   // FLUX.2 Pro — image full qualité
+    slug: "black-forest-labs/flux-2-pro",
     buildInput: ({ prompt, image, aspectRatio }) => ({
       prompt,
       aspect_ratio: aspectRatio || "16:9",
       output_format: "png",
       safety_tolerance: 2,
-      // Image de référence à transformer (image-to-image). Le nom du paramètre
-      // dépend du modèle : sur FLUX c'est souvent "image_prompt" ou "input_image".
-      // Vérifie la page du modèle sur Replicate et ajuste si besoin.
+      // Image de référence (image-to-image). Param selon modèle : image_prompt / input_image.
       ...(image ? { image_prompt: image } : {}),
     }),
   },
+  // Vidéo — Kling v3 (texte→vidéo et image→vidéo, audio, jusqu'à 15 s)
   video: {
-    slug: "kwaivgi/kling-v2.1",               // Kling v2.1 — image-to-video (nécessite une image de départ)
-    buildInput: ({ prompt, image, aspectRatio }) => ({
+    slug: "kwaivgi/kling-v3-video",
+    buildInput: ({ prompt, image, aspectRatio, duration }) => ({
       prompt,
-      duration: 5,                            // secondes
+      mode: "standard",                       // standard (720p) | pro (1080p)
+      duration: duration || 5,                // 3 à 15 s
       aspect_ratio: aspectRatio || "16:9",
-      ...(image ? { start_image: image } : {}), // image-to-video si fournie
+      generate_audio: false,
+      ...(image ? { start_image: image } : {}), // image→vidéo si fournie
+    }),
+  },
+  // Vidéo à partir d'une vidéo — Kling v3 Omni (édition / animation)
+  video_edit: {
+    slug: "kwaivgi/kling-v3-omni-video",
+    buildInput: ({ prompt, video }) => ({
+      prompt,
+      mode: "standard",
+      reference_video: video,                 // .mp4/.mov, 3-10 s
+      video_reference_type: "base",           // base = édition de la vidéo selon le prompt
     }),
   },
 };
@@ -40,20 +52,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { type, prompt, aspectRatio } = req.body || {};
-    // image = data URI (data:image/...;base64,xxxx) envoyé par la page,
-    // ou imageUrl = ancienne URL publique (rétro-compatibilité).
-    const image = req.body?.image || req.body?.imageUrl;
+    const { type, prompt, aspectRatio, duration } = req.body || {};
+    const image = req.body?.image || req.body?.imageUrl; // data URI ou URL
+    const video = req.body?.video;                        // data URI ou URL (vidéo de départ)
 
-    if (!type || !MODELS[type]) {
+    if (!type || (type !== "image" && type !== "video")) {
       return res.status(400).json({ error: "Type invalide (image ou video)." });
     }
     if (!prompt || !prompt.trim()) {
       return res.status(400).json({ error: "Le prompt est vide." });
     }
 
-    const model = MODELS[type];
-    const input = model.buildInput({ prompt: prompt.trim(), image, aspectRatio });
+    // Si une vidéo est fournie en mode vidéo, on passe sur le modèle d'édition (Omni).
+    const key = type === "video" && video ? "video_edit" : type;
+    const model = MODELS[key];
+    const input = model.buildInput({ prompt: prompt.trim(), image, video, aspectRatio, duration });
 
     // 1) Créer la prédiction
     const createRes = await fetch(`${REPLICATE}/models/${model.slug}/predictions`, {
@@ -72,9 +85,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2) Polling jusqu'à succès / échec (la vidéo peut prendre 1-2 min)
+    // 2) Polling jusqu'à succès / échec (la vidéo peut prendre 1-3 min)
     let prediction = created;
-    const deadline = Date.now() + 290_000; // ~290 s (sous la limite Vercel; voir vercel.json)
+    const deadline = Date.now() + 290_000;
 
     while (
       prediction.status !== "succeeded" &&
@@ -92,12 +105,10 @@ export default async function handler(req, res) {
     }
 
     if (prediction.status !== "succeeded") {
-      return res.status(500).json({
-        error: prediction.error || "La génération a échoué.",
-      });
+      return res.status(500).json({ error: prediction.error || "La génération a échoué." });
     }
 
-    // 3) Normaliser la sortie (string, tableau, ou objet)
+    // 3) Normaliser la sortie
     let output = prediction.output;
     if (Array.isArray(output)) output = output[0];
     if (output && typeof output === "object" && output.url) output = output.url;
