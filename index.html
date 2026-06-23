@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Générateur d'images et de vidéos par IA, et chat avec Claude Sonnet 4.6. Outil Dobleyou." />
+<meta name="theme-color" content="#0d0b0c" />
+<meta name="color-scheme" content="dark" />
 <title>Générateur IA — Dobleyou</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -10,274 +13,790 @@
 <style>
   :root {
     --orange: #FF7A1A;
-    --orange-deep: #CC4500;
-    --orange-soft: rgba(255,122,26,.14);
-    --orange-glow: rgba(255,122,26,.45);
-    --bg: #08060A;
-    --surface: #14100E;
-    --surface-2: #1C1714;
-    --line: rgba(255,255,255,.09);
-    --line-strong: rgba(255,255,255,.16);
-    --text: #FAF7F2;
-    --muted: #B9B2A8;
-    --green: #22C55E;
+    --orange-hover: #FF8C38;
+    --orange-soft: rgba(255,122,26,.13);
+    --bg: #0d0b0c;
+    --sidebar: #100e0f;
+    --surface: #1a1517;
+    --surface-2: #221c1e;
+    --line: rgba(255,255,255,.08);
+    --line-strong: rgba(255,255,255,.14);
+    --text: #F3EFEA;
+    --muted: #968F88;
+    --green: #34D399;
     --red: #F87171;
+    --radius: 12px;
+    --ease: cubic-bezier(.4, 0, .2, 1);
+    --t-fast: .15s var(--ease);
+    --focus: 0 0 0 3px rgba(255,122,26,.45);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :focus-visible { outline: none; box-shadow: var(--focus); border-radius: 8px; }
+  *:focus:not(:focus-visible) { outline: none; }
+  ::selection { background: rgba(255,122,26,.35); color: #fff; }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.22); }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+
   body {
     font-family: 'Poppins', system-ui, sans-serif;
-    background: radial-gradient(1200px 600px at 50% -10%, rgba(255,122,26,.10), transparent 60%), var(--bg);
     color: var(--text);
-    min-height: 100vh;
-    padding: 32px 16px 80px;
+    background: var(--bg);
     line-height: 1.5;
-  }
-  .wrap { max-width: 760px; margin: 0 auto; }
-  header { text-align: center; margin-bottom: 36px; }
-  header h1 { font-size: 30px; font-weight: 800; letter-spacing: -.5px; }
-  header h1 span { color: var(--orange); }
-  header p { color: var(--muted); margin-top: 8px; font-size: 15px; }
-
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    padding: 24px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    min-height: 100vh;
   }
 
-  .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .layout { display: flex; min-height: 100vh; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    width: 264px; flex: none; height: 100vh; position: sticky; top: 0;
+    background: var(--sidebar); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; padding: 16px;
+  }
+  .side-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 800; letter-spacing: -.3px; }
+  .brand b { color: var(--orange); font-weight: 800; }
+  .brand-dot {
+    width: 24px; height: 24px; border-radius: 7px; flex: none;
+    background: radial-gradient(circle at 35% 30%, #ffd9b0, var(--orange) 55%, #b53e00);
+    box-shadow: 0 0 14px rgba(255,122,26,.45);
+  }
+  .drawer-close { display: none; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 24px; line-height: 1; padding: 0 4px; }
+  .drawer-close:hover { color: var(--orange); }
+
+  .nav { display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px; }
   .tab {
-    flex: 1; padding: 12px; border-radius: 12px; cursor: pointer;
-    background: var(--surface-2); border: 1px solid var(--line);
-    color: var(--muted); font-weight: 600; font-size: 15px; text-align: center;
-    transition: .15s;
+    display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+    padding: 11px 12px; border-radius: 9px; cursor: pointer;
+    background: transparent; border: 1px solid transparent;
+    color: var(--muted); font-family: inherit; font-weight: 600; font-size: 14px;
+    transition: background var(--t-fast), color var(--t-fast);
   }
-  .tab.active { background: var(--orange-soft); border-color: var(--orange); color: var(--orange); }
+  .tab svg { width: 18px; height: 18px; flex: none; }
+  .tab .tab-label { flex: 1; }
+  .tab:hover:not(.active) { background: var(--surface); color: var(--text); }
+  .tab.active { background: var(--orange-soft); color: var(--orange); }
+
+  .side-section { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .side-title { font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); margin: 4px 4px 10px; }
+  .hist-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin: 0 -4px; padding: 0 4px; }
+  .hist-item {
+    display: flex; gap: 10px; align-items: center; cursor: pointer;
+    background: transparent; border: 1px solid transparent; border-radius: 9px; padding: 6px;
+    transition: background var(--t-fast), border-color var(--t-fast);
+  }
+  .hist-item:hover { background: var(--surface); border-color: var(--line); }
+  .hist-item img { width: 38px; height: 38px; border-radius: 7px; object-fit: cover; flex: none; background: #000; }
+  .hist-thumb-icon { width: 38px; height: 38px; border-radius: 7px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--surface-2); color: var(--orange); }
+  .hist-thumb-icon svg { width: 18px; height: 18px; }
+  .hist-meta { min-width: 0; }
+  .hist-meta .t { font-size: 10px; color: var(--orange); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+  .hist-meta .p { font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hist-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 8px; }
+
+  .side-foot { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 7px; }
+  .row2 { display: flex; gap: 7px; }
+  .hist-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--line); color: var(--text);
+    border-radius: 9px; padding: 9px; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast), transform var(--t-fast);
+  }
+  .hist-btn svg { width: 14px; height: 14px; }
+  .hist-btn:hover:not(:disabled) { color: var(--orange); border-color: var(--orange); }
+  .hist-btn:active:not(:disabled) { transform: scale(.97); }
+  .hist-btn:disabled { opacity: .45; cursor: not-allowed; }
+  .backup-status { font-size: 11.5px; color: var(--muted); text-align: center; min-height: 14px; }
+  .backup-status.active { color: var(--green); }
+  .backup-status.warn { color: var(--orange); }
+  .hist-clear { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 9px; padding: 8px; font-family: inherit; font-size: 12.5px; cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast); }
+  .hist-clear:hover { color: var(--red); border-color: var(--red); }
+
+  /* ---------- Main ---------- */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; }
+  .topbar { display: flex; align-items: center; gap: 12px; padding: 0 clamp(16px, 4vw, 32px); height: 62px; border-bottom: 1px solid var(--line); flex: none; }
+  .menu-btn { display: none; background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 9px; width: 40px; height: 40px; cursor: pointer; align-items: center; justify-content: center; }
+  .menu-btn svg { width: 20px; height: 20px; }
+  .topbar h1 { font-size: 17px; font-weight: 700; letter-spacing: -.2px; }
+
+  .content { flex: 1; overflow-y: auto; padding: clamp(20px, 4vw, 40px) clamp(16px, 4vw, 32px) 64px; }
+  .panel { display: none; max-width: 680px; margin: 0 auto; }
+  .panel.active { display: block; animation: fadeUp .25s var(--ease); }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
   label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
   textarea, input[type=url] {
-    width: 100%; background: var(--surface-2); border: 1px solid var(--line-strong);
-    border-radius: 12px; color: var(--text); padding: 14px; font-family: inherit;
-    font-size: 15px; resize: vertical; transition: .15s;
+    width: 100%; background: var(--surface); border: 1px solid var(--line-strong);
+    border-radius: var(--radius); color: var(--text); padding: 14px; font-family: inherit;
+    font-size: 15px; resize: vertical; transition: border-color var(--t-fast), box-shadow var(--t-fast);
   }
-  textarea { min-height: 110px; }
-  textarea:focus, input:focus { outline: none; border-color: var(--orange); }
-
+  textarea { min-height: 120px; }
+  textarea:focus, input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,122,26,.13); }
   .field { margin-bottom: 18px; }
   .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
-  #videoImageField { display: none; }
+
+  .uploader { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px dashed var(--line-strong); border-radius: var(--radius); padding: 14px; }
+  .uploader.has-image { border-style: solid; border-color: var(--orange); }
+  .upload-btn { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px 16px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--text); font-weight: 600; font-size: 14px; white-space: nowrap; transition: color var(--t-fast), border-color var(--t-fast); }
+  .upload-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .upload-btn svg { width: 16px; height: 16px; }
+  .preview-wrap { display: none; align-items: center; gap: 12px; }
+  .preview-wrap img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
+  .remove-img { cursor: pointer; color: var(--muted); font-size: 13px; text-decoration: underline; background: none; border: none; font-family: inherit; }
+  .remove-img:hover { color: var(--red); }
 
   button.go {
-    width: 100%; padding: 16px; border: none; border-radius: 14px; cursor: pointer;
-    background: linear-gradient(135deg, var(--orange), var(--orange-deep));
-    color: #fff; font-family: inherit; font-weight: 700; font-size: 16px;
-    box-shadow: 0 12px 30px var(--orange-soft); transition: .15s;
+    width: 100%; padding: 15px; border: none; border-radius: var(--radius); cursor: pointer;
+    background: var(--orange); color: #fff; font-family: inherit; font-weight: 700; font-size: 16px;
+    transition: background var(--t-fast), transform var(--t-fast);
   }
-  button.go:hover { transform: translateY(-1px); box-shadow: 0 16px 40px var(--orange-glow); }
-  button.go:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+  button.go:hover { background: var(--orange-hover); }
+  button.go:active { transform: scale(.99); }
+  button.go:disabled { opacity: .55; cursor: not-allowed; }
 
-  #status { margin-top: 20px; text-align: center; font-size: 14px; min-height: 22px; }
+  #status { margin-top: 20px; text-align: center; font-size: 14px; min-height: 22px; display: flex; align-items: center; justify-content: center; gap: 8px; }
   #status.err { color: var(--red); }
-  .spinner {
-    display: inline-block; width: 16px; height: 16px; vertical-align: -3px; margin-right: 8px;
-    border: 2px solid var(--line-strong); border-top-color: var(--orange);
-    border-radius: 50%; animation: spin .8s linear infinite;
-  }
+  #status.ok { color: var(--green); }
+  #status svg { width: 16px; height: 16px; flex: none; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--line-strong); border-top-color: var(--orange); border-radius: 50%; animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   #result { margin-top: 24px; display: none; }
-  #result img, #result video { width: 100%; border-radius: 14px; border: 1px solid var(--line); }
-  .dl {
-    display: inline-block; margin-top: 14px; padding: 10px 18px; border-radius: 10px;
-    background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--text);
-    text-decoration: none; font-weight: 600; font-size: 14px;
-  }
+  #result.show { animation: fadeUp .3s var(--ease); }
+  #result img, #result video { width: 100%; border-radius: var(--radius); border: 1px solid var(--line); display: block; box-shadow: 0 16px 40px rgba(0,0,0,.4); }
+  .dl { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 18px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line-strong); color: var(--text); text-decoration: none; font-weight: 600; font-size: 14px; transition: color var(--t-fast), border-color var(--t-fast); }
+  .dl svg { width: 16px; height: 16px; }
   .dl:hover { border-color: var(--orange); color: var(--orange); }
 
-  /* --- Chat --- */
-  .panel { display: none; }
-  .panel.active { display: block; }
-  #chatLog {
-    display: flex; flex-direction: column; gap: 12px;
-    max-height: 420px; overflow-y: auto; padding: 4px; margin-bottom: 16px;
-  }
-  .msg { padding: 12px 16px; border-radius: 14px; font-size: 15px; max-width: 85%; white-space: pre-wrap; }
-  .msg.user { align-self: flex-end; background: var(--orange-soft); border: 1px solid var(--orange); }
-  .msg.bot { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--line); }
+  /* ---------- Chat ---------- */
+  .chat-head { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  .chat-clear { background: none; border: none; color: var(--muted); font-family: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; }
+  .chat-clear:hover { color: var(--orange); }
+  #chatLog { display: flex; flex-direction: column; gap: 12px; max-height: 56vh; overflow-y: auto; padding: 4px; margin-bottom: 16px; }
+  .msg { padding: 12px 16px; border-radius: 14px; font-size: 15px; max-width: 85%; white-space: pre-wrap; word-wrap: break-word; }
+  .msg.user { align-self: flex-end; background: var(--orange-soft); border: 1px solid rgba(255,122,26,.4); }
+  .msg.bot { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); }
   .msg.bot.typing { color: var(--muted); font-style: italic; }
+  .msg img { max-width: 100%; border-radius: 10px; margin-bottom: 8px; display: block; border: 1px solid var(--line); }
+  .chat-empty { color: var(--muted); text-align: center; font-size: 14px; padding: 30px 0; }
+  .chat-preview { display: none; align-items: center; gap: 10px; margin-bottom: 10px; background: var(--surface); border: 1px solid var(--orange); border-radius: 10px; padding: 8px; }
+  .chat-preview img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; }
+  .chat-preview span { font-size: 13px; color: var(--muted); flex: 1; }
+  .chat-preview button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; text-decoration: underline; font-family: inherit; }
+  .chat-preview button:hover { color: var(--red); }
   .chat-row { display: flex; gap: 8px; }
   .chat-row textarea { min-height: 52px; }
-  .chat-row button {
-    border: none; border-radius: 12px; cursor: pointer; padding: 0 22px;
-    background: linear-gradient(135deg, var(--orange), var(--orange-deep));
-    color: #fff; font-family: inherit; font-weight: 700; font-size: 15px;
-  }
+  .chat-attach { flex: none; width: 52px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius); cursor: pointer; background: var(--surface); border: 1px solid var(--line-strong); color: var(--muted); transition: color var(--t-fast), border-color var(--t-fast); }
+  .chat-attach:hover, .chat-attach.has-image { color: var(--orange); border-color: var(--orange); }
+  .chat-attach svg { width: 18px; height: 18px; }
+  .chat-row button { border: none; border-radius: var(--radius); cursor: pointer; padding: 0 22px; background: var(--orange); color: #fff; font-family: inherit; font-weight: 700; font-size: 15px; transition: background var(--t-fast); }
+  .chat-row button:hover { background: var(--orange-hover); }
   .chat-row button:disabled { opacity: .55; cursor: not-allowed; }
-  .chat-empty { color: var(--muted); text-align: center; font-size: 14px; padding: 30px 0; }
+
+  /* ---------- Overlay (mobile) ---------- */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 25; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 820px) {
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0; height: 100%; width: 280px; max-width: 84vw; z-index: 30;
+      transform: translateX(-100%); transition: transform .25s var(--ease);
+      box-shadow: 0 0 60px rgba(0,0,0,.6);
+    }
+    .sidebar.open { transform: none; }
+    .drawer-close { display: block; }
+    .menu-btn { display: inline-flex; }
+    .main { height: auto; min-height: 100vh; }
+  }
+  @media (max-width: 600px) {
+    .content { padding: 18px 14px 56px; }
+    textarea { font-size: 16px; } /* anti-zoom iOS */
+    .uploader { flex-direction: column; align-items: stretch; gap: 12px; }
+    .upload-btn { justify-content: center; }
+    .preview-wrap { justify-content: space-between; }
+    .chat-row { flex-wrap: wrap; }
+    .chat-row textarea { flex: 1 1 100%; order: 1; }
+    .chat-attach { order: 2; width: auto; flex: 0 0 auto; padding: 0 16px; height: 46px; }
+    .chat-row button { order: 3; flex: 1; padding: 13px; }
+    .msg { max-width: 92%; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>Générateur <span>IA</span></h1>
-    <p>Images, vidéos & chat IA — Replicate + Claude Sonnet 4.6</p>
-  </header>
 
-  <div class="card">
-    <div class="tabs">
-      <div class="tab active" data-tab="image">🖼️ Image</div>
-      <div class="tab" data-tab="video">🎬 Vidéo</div>
-      <div class="tab" data-tab="chat">💬 Chat</div>
+<div class="layout">
+
+  <!-- Sidebar : navigation + historique -->
+  <aside class="sidebar" id="drawer" aria-label="Navigation et historique">
+    <div class="side-top">
+      <div class="brand"><span class="brand-dot" aria-hidden="true"></span> Générateur <b>IA</b></div>
+      <button class="drawer-close" id="drawerClose" aria-label="Fermer le menu">&times;</button>
     </div>
 
-    <!-- Panneau génération (image + vidéo) -->
-    <div class="panel active" id="genPanel">
-      <div class="field">
-        <label for="prompt">Décris ce que tu veux générer</label>
-        <textarea id="prompt" placeholder="Ex : un coucher de soleil cinématique sur une ville africaine, lumière dorée, ultra détaillé"></textarea>
-        <div class="hint">Sois précis : style, lumière, ambiance, cadrage. L'anglais marche souvent mieux pour la qualité.</div>
-      </div>
+    <nav class="nav" role="tablist" aria-label="Type de génération">
+      <button type="button" class="tab active" data-tab="image" role="tab" aria-selected="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 20"/></svg>
+        <span class="tab-label">Image</span>
+      </button>
+      <button type="button" class="tab" data-tab="video" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="14" height="16" rx="2"/><path d="m22 7-6 4 6 4z"/></svg>
+        <span class="tab-label">Vidéo</span>
+      </button>
+      <button type="button" class="tab" data-tab="chat" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="tab-label">Chat</span>
+      </button>
+    </nav>
 
-      <div class="field" id="videoImageField">
-        <label for="imageUrl">Image de départ (optionnel — pour animer une image)</label>
-        <input type="url" id="imageUrl" placeholder="https://... (URL d'une image publique)" />
-        <div class="hint">Laisse vide pour une vidéo à partir du texte seul.</div>
-      </div>
-
-      <button class="go" id="goBtn">Générer</button>
-
-      <div id="status"></div>
-      <div id="result"></div>
+    <div class="side-section">
+      <div class="side-title">Récents</div>
+      <div class="hist-list" id="histList"></div>
     </div>
 
-    <!-- Panneau chat (Claude Sonnet 4.6) -->
-    <div class="panel" id="chatPanel">
-      <div id="chatLog">
-        <div class="chat-empty">Pose ta question à Claude Sonnet 4.6 👋</div>
+    <div class="side-foot">
+      <div class="row2">
+        <button class="hist-btn" id="backupLink">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span id="backupLinkLabel">Lier un fichier</span>
+        </button>
+        <button class="hist-btn" id="backupSave">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+          Enregistrer
+        </button>
       </div>
-      <div class="chat-row">
-        <textarea id="chatInput" placeholder="Écris ton message…"></textarea>
-        <button id="chatSend">Envoyer</button>
+      <div class="backup-status" id="backupStatus"></div>
+      <div class="row2">
+        <button class="hist-btn" id="histExport">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+          Exporter
+        </button>
+        <label class="hist-btn" for="histImportFile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+          Importer
+        </label>
+        <input type="file" id="histImportFile" accept="application/json,.json" hidden />
+      </div>
+      <button class="hist-clear" id="histClear">Effacer l'historique</button>
+    </div>
+  </aside>
+
+  <!-- Contenu principal -->
+  <main class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="histToggle" aria-controls="drawer" aria-haspopup="true" aria-label="Ouvrir le menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18"/><path d="M3 6h18"/><path d="M3 18h18"/></svg>
+      </button>
+      <h1 id="mainTitle">Génération d'image</h1>
+    </header>
+
+    <div class="content">
+      <!-- Panneau génération (image + vidéo) -->
+      <div class="panel active" id="genPanel">
+        <div class="field">
+          <label for="prompt">Décris ce que tu veux générer</label>
+          <textarea id="prompt" placeholder="Ex : un coucher de soleil cinématique sur une ville africaine, lumière dorée, ultra détaillé"></textarea>
+          <div class="hint">Sois précis : style, lumière, ambiance, cadrage. L'anglais marche souvent mieux pour la qualité.</div>
+        </div>
+
+        <div class="field">
+          <label id="uploadLabel" for="imageFile">Image de référence (optionnel)</label>
+          <div class="uploader" id="uploader">
+            <label class="upload-btn" for="imageFile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+              <span>Importer une image</span>
+            </label>
+            <input type="file" id="imageFile" accept="image/*" hidden />
+            <div class="preview-wrap" id="previewWrap">
+              <img id="previewImg" alt="Aperçu" />
+              <button type="button" class="remove-img" id="removeImg">Retirer</button>
+            </div>
+          </div>
+          <div class="hint" id="uploadHint">Importe une image à transformer selon ton prompt (laisse vide pour partir du texte seul).</div>
+        </div>
+
+        <button class="go" id="goBtn">Générer</button>
+
+        <div id="status"></div>
+        <div id="result"></div>
+      </div>
+
+      <!-- Panneau chat (Claude Sonnet 4.6) -->
+      <div class="panel" id="chatPanel">
+        <div class="chat-head">
+          <button class="chat-clear" id="chatClear">Nouvelle conversation</button>
+        </div>
+        <div id="chatLog">
+          <div class="chat-empty">Pose ta question à Claude Sonnet 4.6</div>
+        </div>
+        <div class="chat-preview" id="chatPreview">
+          <img id="chatPreviewImg" alt="Aperçu" />
+          <span>Image jointe</span>
+          <button type="button" id="chatRemoveImg">Retirer</button>
+        </div>
+        <div class="chat-row">
+          <label class="chat-attach" for="chatImageFile" title="Joindre une image">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </label>
+          <input type="file" id="chatImageFile" accept="image/*" hidden />
+          <textarea id="chatInput" placeholder="Écris ton message…"></textarea>
+          <button id="chatSend">Envoyer</button>
+        </div>
       </div>
     </div>
-  </div>
+  </main>
+
+  <div class="overlay" id="overlay"></div>
 </div>
 
 <script>
+  const ICON = {
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>',
+    img: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 20"/></svg>',
+    vid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="14" height="16" rx="2"/><path d="m22 7-6 4 6 4z"/></svg>',
+  };
+
   let currentType = "image";
+  let selectedImageData = null;
+
   const tabs = document.querySelectorAll(".tab");
   const genPanel = document.getElementById("genPanel");
   const chatPanel = document.getElementById("chatPanel");
-  const videoImageField = document.getElementById("videoImageField");
   const goBtn = document.getElementById("goBtn");
   const statusEl = document.getElementById("status");
   const resultEl = document.getElementById("result");
+  const uploadLabel = document.getElementById("uploadLabel");
+  const uploadHint = document.getElementById("uploadHint");
+  const mainTitle = document.getElementById("mainTitle");
 
-  tabs.forEach((tab) => {
+  function selectTab(which) {
+    tabs.forEach((t) => {
+      const on = t.dataset.tab === which;
+      t.classList.toggle("active", on);
+      t.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    const titles = { image: "Génération d'image", video: "Génération de vidéo", chat: "Chat — Claude Sonnet 4.6" };
+    if (mainTitle) mainTitle.textContent = titles[which] || "Générateur IA";
+    if (which === "chat") {
+      genPanel.classList.remove("active");
+      chatPanel.classList.add("active");
+      return;
+    }
+    chatPanel.classList.remove("active");
+    genPanel.classList.add("active");
+    currentType = which;
+    if (currentType === "video") {
+      uploadLabel.textContent = "Image de départ (optionnel)";
+      uploadHint.textContent = "Importe une image à animer en vidéo (laisse vide pour partir du texte seul).";
+    } else {
+      uploadLabel.textContent = "Image de référence (optionnel)";
+      uploadHint.textContent = "Importe une image à transformer selon ton prompt (laisse vide pour partir du texte seul).";
+    }
+  }
+  tabs.forEach((tab, i) => {
     tab.addEventListener("click", () => {
-      tabs.forEach((t) => t.classList.remove("active"));
-      tab.classList.add("active");
-      const which = tab.dataset.tab;
-
-      if (which === "chat") {
-        genPanel.classList.remove("active");
-        chatPanel.classList.add("active");
-        return;
-      }
-
-      chatPanel.classList.remove("active");
-      genPanel.classList.add("active");
-      currentType = which; // image | video
-      videoImageField.style.display = currentType === "video" ? "block" : "none";
+      selectTab(tab.dataset.tab);
+      if (window.innerWidth <= 820) closeDrawer();
+    });
+    tab.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      e.preventDefault();
+      const next = e.key === "ArrowRight" ? (i + 1) % tabs.length : (i - 1 + tabs.length) % tabs.length;
+      tabs[next].focus();
+      selectTab(tabs[next].dataset.tab);
     });
   });
 
+  /* ----- Import + compression d'image ----- */
+  const imageFile = document.getElementById("imageFile");
+  const uploader = document.getElementById("uploader");
+  const previewWrap = document.getElementById("previewWrap");
+  const previewImg = document.getElementById("previewImg");
+  const removeImg = document.getElementById("removeImg");
+
+  // Compresse une image (max 1280px, JPEG) et renvoie un data URI via callback
+  function compressImage(file, cb) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1280;
+        let { width, height } = img;
+        if (width > max || height > max) {
+          const ratio = Math.min(max / width, max / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        cb(canvas.toDataURL("image/jpeg", 0.9));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  imageFile.addEventListener("change", () => {
+    const file = imageFile.files && imageFile.files[0];
+    if (!file) return;
+    compressImage(file, (data) => {
+      selectedImageData = data;
+      previewImg.src = data;
+      previewWrap.style.display = "flex";
+      uploader.classList.add("has-image");
+    });
+  });
+
+  removeImg.addEventListener("click", () => {
+    selectedImageData = null; imageFile.value = "";
+    previewWrap.style.display = "none";
+    uploader.classList.remove("has-image");
+  });
+
+  /* ----- Génération image / vidéo ----- */
   goBtn.addEventListener("click", async () => {
     const prompt = document.getElementById("prompt").value.trim();
-    const imageUrl = document.getElementById("imageUrl").value.trim();
-    if (!prompt) {
-      setStatus("Écris d'abord un prompt.", true);
-      return;
-    }
+    if (!prompt) { setStatus("warn", "Écris d'abord un prompt.", true); return; }
 
     goBtn.disabled = true;
-    resultEl.style.display = "none";
-    resultEl.innerHTML = "";
-    setStatus(
-      '<span class="spinner"></span>' +
-        (currentType === "video"
-          ? "Génération de la vidéo… (peut prendre 1 à 2 minutes)"
-          : "Génération de l'image…")
-    );
+    resultEl.style.display = "none"; resultEl.innerHTML = ""; resultEl.classList.remove("show");
+    setStatus("spinner", currentType === "video"
+      ? "Génération de la vidéo… (peut prendre 1 à 2 minutes)"
+      : "Génération de l'image…");
 
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: currentType,
-          prompt,
-          imageUrl: currentType === "video" && imageUrl ? imageUrl : undefined,
-        }),
+        body: JSON.stringify({ type: currentType, prompt, image: selectedImageData || undefined }),
       });
       const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || "Échec de la génération.");
 
-      if (!res.ok || !data.url) {
-        throw new Error(data.error || "Échec de la génération.");
-      }
-
-      setStatus("✅ Terminé !");
-      if (currentType === "video") {
-        resultEl.innerHTML =
-          '<video src="' + data.url + '" controls autoplay loop></video>' +
-          '<a class="dl" href="' + data.url + '" download target="_blank">⬇️ Télécharger la vidéo</a>';
-      } else {
-        resultEl.innerHTML =
-          '<img src="' + data.url + '" alt="Image générée" />' +
-          '<a class="dl" href="' + data.url + '" download target="_blank">⬇️ Télécharger l\'image</a>';
-      }
-      resultEl.style.display = "block";
+      setStatus("ok", "Terminé !");
+      showResult(currentType, data.url);
+      saveHistory({ type: currentType, prompt, url: data.url, ts: Date.now() });
     } catch (err) {
-      setStatus(err.message || "Une erreur est survenue.", true);
+      setStatus("warn", err.message || "Une erreur est survenue.", true);
     } finally {
       goBtn.disabled = false;
     }
   });
 
-  function setStatus(html, isError) {
-    statusEl.innerHTML = html;
-    statusEl.className = isError ? "err" : "";
+  function showResult(type, url) {
+    if (type === "video") {
+      resultEl.innerHTML =
+        '<video src="' + url + '" controls autoplay loop playsinline></video>' +
+        '<a class="dl" href="' + url + '" download target="_blank" rel="noopener noreferrer">' + ICON.download + 'Télécharger la vidéo</a>';
+    } else {
+      resultEl.innerHTML =
+        '<img src="' + url + '" alt="Image générée" loading="lazy" />' +
+        '<a class="dl" href="' + url + '" download target="_blank" rel="noopener noreferrer">' + ICON.download + "Télécharger l'image</a>";
+    }
+    resultEl.style.display = "block";
+    resultEl.classList.add("show");
   }
 
-  /* ----- Chat avec Claude Sonnet 4.6 ----- */
+  function setStatus(kind, text, isError) {
+    let icon = "";
+    if (kind === "spinner") icon = '<span class="spinner"></span>';
+    else if (kind === "ok") icon = ICON.check;
+    else if (kind === "warn") icon = ICON.warn;
+    statusEl.innerHTML = icon + "<span>" + text + "</span>";
+    statusEl.className = isError ? "err" : kind === "ok" ? "ok" : "";
+  }
+
+  /* ----- Historique local (localStorage) ----- */
+  const HISTORY_KEY = "genia_history";
+  const histList = document.getElementById("histList");
+  const drawer = document.getElementById("drawer");
+  const overlay = document.getElementById("overlay");
+
+  function getHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+    catch { return []; }
+  }
+  function saveHistory(item) {
+    const list = getHistory();
+    list.unshift(item);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 40)));
+    renderHistory();
+    writeBackup();
+  }
+  function renderHistory() {
+    const list = getHistory();
+    if (!list.length) {
+      histList.innerHTML = '<div class="hist-empty">Aucune génération pour l\'instant.</div>';
+      return;
+    }
+    histList.innerHTML = list.map((it, i) => {
+      const thumb = it.type === "image"
+        ? '<img src="' + it.url + '" alt="" />'
+        : '<div class="hist-thumb-icon">' + ICON.vid + "</div>";
+      const label = it.type === "image" ? "Image" : "Vidéo";
+      const p = (it.prompt || "").replace(/</g, "&lt;");
+      return '<div class="hist-item" data-i="' + i + '">' + thumb +
+        '<div class="hist-meta"><div class="t">' + label + '</div><div class="p">' + p + "</div></div></div>";
+    }).join("");
+    histList.querySelectorAll(".hist-item").forEach((el) => {
+      el.addEventListener("click", () => {
+        const it = getHistory()[+el.dataset.i];
+        if (!it) return;
+        selectTab(it.type);
+        document.getElementById("prompt").value = it.prompt || "";
+        showResult(it.type, it.url);
+        setStatus("ok", "Génération rechargée depuis l'historique.");
+        closeDrawer();
+      });
+    });
+  }
+  const histToggleBtn = document.getElementById("histToggle");
+  const drawerCloseBtn = document.getElementById("drawerClose");
+  function openDrawer() {
+    drawer.classList.add("open"); overlay.classList.add("open");
+    histToggleBtn.setAttribute("aria-expanded", "true");
+    drawerCloseBtn.focus();
+  }
+  function closeDrawer() {
+    drawer.classList.remove("open"); overlay.classList.remove("open");
+    histToggleBtn.setAttribute("aria-expanded", "false");
+  }
+
+  histToggleBtn.setAttribute("aria-expanded", "false");
+  histToggleBtn.addEventListener("click", openDrawer);
+  drawerCloseBtn.addEventListener("click", closeDrawer);
+  overlay.addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && drawer.classList.contains("open")) closeDrawer();
+  });
+  document.getElementById("histClear").addEventListener("click", () => {
+    if (confirm("Effacer tout l'historique ?")) {
+      localStorage.removeItem(HISTORY_KEY); renderHistory();
+    }
+  });
+
+  /* ----- Export / Import du fichier d'historique ----- */
+  document.getElementById("histExport").addEventListener("click", () => {
+    const data = {
+      app: "generateur-ia",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      generations: JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"),
+      chat: JSON.parse(localStorage.getItem("genia_chat") || "[]"),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    const d = new Date().toISOString().slice(0, 10);
+    a.download = "historique-generateur-ia-" + d + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(a.href);
+  });
+
+  document.getElementById("histImportFile").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.app !== "generateur-ia") {
+          if (!confirm("Ce fichier ne semble pas venir de cet outil. L'importer quand même ?")) return;
+        }
+        if (Array.isArray(data.generations)) localStorage.setItem(HISTORY_KEY, JSON.stringify(data.generations));
+        if (Array.isArray(data.chat)) localStorage.setItem("genia_chat", JSON.stringify(data.chat));
+        alert("Historique importé. La page va se recharger.");
+        location.reload();
+      } catch (err) {
+        alert("Fichier invalide : impossible de lire l'historique.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  });
+
+  /* ----- Sauvegarde automatique vers un fichier (File System Access API) ----- */
+  const backupLinkBtn = document.getElementById("backupLink");
+  const backupLinkLabel = document.getElementById("backupLinkLabel");
+  const backupSaveBtn = document.getElementById("backupSave");
+  const backupStatus = document.getElementById("backupStatus");
+  let backupHandle = null;
+  const SUPPORTED = typeof window.showSaveFilePicker === "function";
+
+  function idb(mode, fn) {
+    return new Promise((resolve) => {
+      const open = indexedDB.open("genia_db", 1);
+      open.onupgradeneeded = () => open.result.createObjectStore("kv");
+      open.onsuccess = () => {
+        const store = open.result.transaction("kv", mode).objectStore("kv");
+        const req = fn(store);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
+      };
+      open.onerror = () => resolve(null);
+    });
+  }
+  const idbGet = (k) => idb("readonly", (s) => s.get(k));
+  const idbSet = (k, v) => idb("readwrite", (s) => s.put(v, k));
+
+  function currentData() {
+    return {
+      app: "generateur-ia",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      generations: JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"),
+      chat: JSON.parse(localStorage.getItem("genia_chat") || "[]"),
+    };
+  }
+
+  async function writeBackup() {
+    if (!backupHandle) return;
+    try {
+      const writable = await backupHandle.createWritable();
+      await writable.write(JSON.stringify(currentData(), null, 2));
+      await writable.close();
+      setBackupStatus("active", "Sauvegarde auto active — fichier mis à jour.");
+    } catch (e) {
+      setBackupStatus("warn", "Sauvegarde en pause — clique pour reconnecter le fichier.");
+    }
+  }
+
+  function setBackupStatus(kind, text) {
+    backupStatus.className = "backup-status" + (kind ? " " + kind : "");
+    backupStatus.textContent = text;
+    if (kind === "active") backupLinkLabel.textContent = "Fichier lié ✓";
+    else if (kind === "warn") backupLinkLabel.textContent = "Reconnecter";
+    else backupLinkLabel.textContent = "Lier un fichier";
+    backupSaveBtn.disabled = !backupHandle;
+  }
+
+  async function linkBackupFile() {
+    if (!SUPPORTED) {
+      setBackupStatus("warn", "Non supporté ici. Utilise Exporter/Importer (Chrome ou Edge recommandé).");
+      return;
+    }
+    if (backupHandle) {
+      const perm = await backupHandle.requestPermission({ mode: "readwrite" });
+      if (perm === "granted") { await writeBackup(); }
+      else { setBackupStatus("warn", "Permission refusée."); }
+      return;
+    }
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: "historique-generateur-ia.json",
+        types: [{ description: "JSON", accept: { "application/json": [".json"] } }],
+      });
+      backupHandle = handle;
+      await idbSet("backupHandle", handle);
+      await writeBackup();
+    } catch (e) { /* annulé par l'utilisateur */ }
+  }
+
+  async function saveNow() {
+    if (!backupHandle) {
+      setBackupStatus("warn", "Lie d'abord un fichier pour pouvoir enregistrer.");
+      return;
+    }
+    await writeBackup();
+  }
+
+  backupLinkBtn.addEventListener("click", linkBackupFile);
+  backupSaveBtn.addEventListener("click", saveNow);
+
+  async function initBackup() {
+    if (!SUPPORTED) {
+      setBackupStatus("", "Sauvegarde auto indisponible (Chrome/Edge requis).");
+      return;
+    }
+    const saved = await idbGet("backupHandle");
+    if (saved) {
+      backupHandle = saved;
+      const perm = await saved.queryPermission({ mode: "readwrite" });
+      if (perm === "granted") setBackupStatus("active", "Sauvegarde auto active.");
+      else setBackupStatus("warn", "Fichier mémorisé — clique pour reconnecter.");
+    } else {
+      setBackupStatus("", "Lie un fichier pour enregistrer automatiquement.");
+    }
+  }
+
+  /* ----- Chat avec Claude Sonnet 4.6 (persistant) ----- */
+  const CHAT_KEY = "genia_chat";
   const chatLog = document.getElementById("chatLog");
   const chatInput = document.getElementById("chatInput");
   const chatSend = document.getElementById("chatSend");
-  const history = []; // { role: 'user'|'assistant', content }
+  const chatImageFile = document.getElementById("chatImageFile");
+  const chatAttach = document.querySelector(".chat-attach");
+  const chatPreview = document.getElementById("chatPreview");
+  const chatPreviewImg = document.getElementById("chatPreviewImg");
+  let chatImageData = null;
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem(CHAT_KEY)) || []; } catch { history = []; }
 
-  function addMessage(role, text, extraClass) {
+  function saveChat() {
+    const light = history.map((m) => ({ role: m.role, content: m.content }));
+    try { localStorage.setItem(CHAT_KEY, JSON.stringify(light.slice(-40))); } catch (e) {}
+    writeBackup();
+  }
+
+  function addMessage(role, text, extraClass, imageData) {
     const empty = chatLog.querySelector(".chat-empty");
     if (empty) empty.remove();
     const div = document.createElement("div");
     div.className = "msg " + (role === "user" ? "user" : "bot") + (extraClass ? " " + extraClass : "");
-    div.textContent = text;
+    if (imageData) {
+      const im = document.createElement("img");
+      im.src = imageData;
+      div.appendChild(im);
+    }
+    if (text) {
+      const span = document.createElement("span");
+      span.textContent = text;
+      div.appendChild(span);
+    }
     chatLog.appendChild(div);
     chatLog.scrollTop = chatLog.scrollHeight;
     return div;
   }
 
+  history.forEach((m) => addMessage(m.role, m.content));
+
+  chatImageFile.addEventListener("change", () => {
+    const file = chatImageFile.files && chatImageFile.files[0];
+    if (!file) return;
+    compressImage(file, (data) => {
+      chatImageData = data;
+      chatPreviewImg.src = data;
+      chatPreview.style.display = "flex";
+      chatAttach.classList.add("has-image");
+    });
+  });
+  document.getElementById("chatRemoveImg").addEventListener("click", () => {
+    chatImageData = null; chatImageFile.value = "";
+    chatPreview.style.display = "none";
+    chatAttach.classList.remove("has-image");
+  });
+
   async function sendChat() {
     const text = chatInput.value.trim();
-    if (!text) return;
-
-    addMessage("user", text);
-    history.push({ role: "user", content: text });
+    if (!text && !chatImageData) return;
+    const img = chatImageData;
+    addMessage("user", text, null, img);
+    history.push({ role: "user", content: text, image: img || undefined });
+    saveChat();
     chatInput.value = "";
+    chatImageData = null; chatImageFile.value = "";
+    chatPreview.style.display = "none";
+    chatAttach.classList.remove("has-image");
     chatSend.disabled = true;
-
     const typing = addMessage("assistant", "Claude réfléchit…", "typing");
-
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -286,14 +805,14 @@
       });
       const data = await res.json();
       if (!res.ok || !data.reply) throw new Error(data.error || "Échec de la réponse.");
-
       typing.classList.remove("typing");
       typing.textContent = data.reply;
       history.push({ role: "assistant", content: data.reply });
+      saveChat();
     } catch (err) {
       typing.classList.remove("typing");
       typing.style.color = "var(--red)";
-      typing.textContent = "⚠️ " + (err.message || "Erreur.");
+      typing.textContent = "⚠ " + (err.message || "Erreur.");
     } finally {
       chatSend.disabled = false;
       chatLog.scrollTop = chatLog.scrollHeight;
@@ -302,11 +821,15 @@
 
   chatSend.addEventListener("click", sendChat);
   chatInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendChat();
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); }
   });
+  document.getElementById("chatClear").addEventListener("click", () => {
+    history = []; saveChat();
+    chatLog.innerHTML = '<div class="chat-empty">Pose ta question à Claude Sonnet 4.6</div>';
+  });
+
+  renderHistory();
+  initBackup();
 </script>
 </body>
 </html>
