@@ -81,9 +81,26 @@ Tu paies uniquement à l'usage, directement sur ton crédit Replicate.
 
 ---
 
+## Nouveautés (v1.1)
+
+- **✨ Optimiseur de prompt** : bouton dans la barre de génération qui envoie ton idée à Claude, la traduit en anglais et l'enrichit (sujet, style, lumière, composition) avant de générer. Meilleur rendu sans effort.
+- **Format / ratio** : 16:9, 9:16 (Reels/TikTok), 1:1, 4:5, 3:2. Limité automatiquement à 16:9 / 9:16 / 1:1 en mode vidéo (contrainte Kling).
+- **Durée vidéo** : 5 s ou 10 s.
+- **Variations multiples** : générer 1 à 4 images d'un coup, affichées en grille.
+- **Vue plein écran (lightbox)** : clique une image ou vidéo pour l'agrandir.
+
+## Variables d'environnement (Vercel)
+
+Obligatoires :
+- `REPLICATE_API_TOKEN` → clé Replicate (`r8_...`)
+- `ANTHROPIC_API_KEY` → clé Anthropic (`sk-ant-...`)
+
+Optionnelles — pour corriger un slug de modèle obsolète **sans redéployer le code** :
+- `MODEL_IMAGE` (défaut `black-forest-labs/flux-2-pro`)
+- `MODEL_VIDEO` (défaut `kwaivgi/kling-v3-video`)
+- `MODEL_VIDEO_EDIT` (défaut `kwaivgi/kling-v3-omni-video`)
+
 ## Idées d'évolution
 
-- Choix du format (16:9, 9:16 pour Reels/TikTok, 1:1).
-- Choix de la durée de vidéo.
-- Historique des générations.
+- Contrôle du seed (reproductibilité) et prompt négatif.
 - Brancher **Veo 3.1** (Google) ou **Runway** pour pousser encore la qualité vidéo.
