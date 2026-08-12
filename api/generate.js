@@ -81,7 +81,7 @@ async function openaiImage({ key, prompt, aspectRatio, image }) {
     const parsed = dataUriToBuffer(image);
     const form = new FormData();
     form.append("model", OPENAI_IMAGE_MODEL);
-    form.append("prompt", prompt);
+    form.append("prompt", "Edit the provided image, keeping its overall composition and main subject: " + prompt);
     form.append("size", size);
     if (parsed) form.append("image", new Blob([parsed.buffer], { type: parsed.mime }), "input.png");
     r = await fetch(`${OPENAI_IMAGES}/edits`, { method: "POST", headers: { Authorization: `Bearer ${key}` }, body: form });
@@ -103,9 +103,12 @@ async function openaiImage({ key, prompt, aspectRatio, image }) {
 const OPENROUTER_IMAGES = "https://openrouter.ai/api/v1/images";
 const OPENROUTER_IMAGE_MODEL = process.env.OPENROUTER_IMAGE_MODEL || "openai/gpt-image-2";
 async function openrouterImage({ key, prompt, aspectRatio, image }) {
+  const finalPrompt = image
+    ? "Using the attached reference image as the base, transform it as follows while keeping its overall composition, framing and main subject: " + prompt
+    : prompt;
   const body = {
     model: OPENROUTER_IMAGE_MODEL,
-    prompt,
+    prompt: finalPrompt,
     aspect_ratio: aspectRatio || "1:1", // OpenRouter accepte directement les ratios
     quality: "high",
     n: 1,
