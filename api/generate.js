@@ -7,7 +7,7 @@
 // → tu peux corriger un slug obsolète sans redéployer le code.
 const SLUGS = {
   image: process.env.MODEL_IMAGE || "black-forest-labs/flux-2-pro",
-  video: process.env.MODEL_VIDEO || "kwaivgi/kling-v3-video",
+  video: process.env.MODEL_VIDEO || "kwaivgi/kling-v2.5-turbo-pro",
   video_edit: process.env.MODEL_VIDEO_EDIT || "kwaivgi/kling-v3-omni-video",
   avatar: process.env.MODEL_AVATAR || "kwaivgi/kling-avatar-v2",
 };
@@ -28,12 +28,12 @@ const MODELS = {
   // Vidéo — Kling v3 (texte→vidéo et image→vidéo, audio, jusqu'à 15 s)
   video: {
     slug: SLUGS.video,
-    buildInput: ({ prompt, image, endImage, aspectRatio, duration, resolution }) => ({
+    // Kling 2.5 Turbo Pro : 1080p natif. Paramètres épurés selon le schéma du modèle.
+    buildInput: ({ prompt, image, endImage, aspectRatio, duration }) => ({
       prompt,
-      mode: resolution === "720p" ? "standard" : "pro", // standard=720p, pro=1080p (4K → pro, max Kling)
-      duration: duration || 5,                // 3 à 15 s
+      duration: duration || 5,                // 5 ou 10 s
       aspect_ratio: aspectRatio || "16:9",
-      generate_audio: false,
+      negative_prompt: "blurry, low quality, distorted, deformed, watermark",
       ...(image ? { start_image: image } : {}),   // image de début (image→vidéo)
       ...(endImage ? { end_image: endImage } : {}), // image de fin (interpolation début→fin)
     }),
