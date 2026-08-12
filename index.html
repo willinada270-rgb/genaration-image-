@@ -441,6 +441,14 @@
         </div>
         <div class="composer">
           <div class="res-row" id="resRow">
+            <div class="ctrl-field" id="engineField">
+              <span class="lbl-inline">Moteur</span>
+              <select id="engineSelect" aria-label="Moteur de génération d'image">
+                <option value="replicate" selected>FLUX</option>
+                <option value="openrouter">GPT Image 2 (OpenRouter)</option>
+                <option value="openai">GPT Image (OpenAI)</option>
+              </select>
+            </div>
             <div class="ctrl-field" id="formatField">
               <span class="lbl-inline">Format</span>
               <select id="formatSelect" aria-label="Format / ratio">
@@ -666,6 +674,8 @@
   const resRow = document.getElementById("resRow");
   const resSelect = document.getElementById("resSelect");
   const formatSelect = document.getElementById("formatSelect");
+  const engineSelect = document.getElementById("engineSelect");
+  const engineField = document.getElementById("engineField");
   const countSelect = document.getElementById("countSelect");
   const durSelect = document.getElementById("durSelect");
   const countField = document.getElementById("countField");
@@ -701,6 +711,7 @@
       resField.style.display = "flex";
       durField.style.display = "flex";
       multiShotField.style.display = "flex";
+      engineField.style.display = "none";
       document.getElementById("prompt").placeholder = "Décris la vidéo (ou le mouvement si tu joins une image/vidéo)…";
       uploadHint.textContent = "Qualité : 720p et 1080p natifs (Kling). « 4K » = qualité max du modèle (rendu en 1080p).";
     } else {
@@ -709,6 +720,7 @@
       resField.style.display = "none";
       durField.style.display = "none";
       multiShotField.style.display = "none";
+      engineField.style.display = "flex";
       multiShotToggle.checked = false;
       clearVideo();
       document.getElementById("prompt").placeholder = "Décris ce que tu veux générer…";
@@ -891,7 +903,7 @@
 
   // Un seul appel au backend → renvoie l'URL du média
   async function generateOne(params) {
-    const { type, prompt, image, video, resolution, aspectRatio, duration } = params;
+    const { type, prompt, image, video, resolution, aspectRatio, duration, engine } = params;
     const res = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -902,6 +914,7 @@
         resolution: resolution || undefined,
         aspectRatio: aspectRatio || undefined,
         duration: duration || undefined,
+        engine: engine || undefined,
       }),
     });
     const data = await res.json();
@@ -1110,6 +1123,7 @@
       aspectRatio: formatSelect.value,
       duration: currentType === "video" ? parseInt(durSelect.value, 10) : undefined,
       count: currentType === "image" ? parseInt(countSelect.value, 10) : 1,
+      engine: currentType === "image" ? engineSelect.value : undefined,
     };
     document.getElementById("prompt").value = "";
     selectedImageData = null; selectedVideoData = null; imageFile.value = ""; videoFile.value = "";
@@ -1192,7 +1206,15 @@
   function saveHistory(item) {
     const list = getHistory();
     list.unshift(item);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 40)));
+    // GPT Image renvoie des data URIs volumineux : on réduit la liste si le quota localStorage est atteint
+    let slice = list.slice(0, 40);
+    while (slice.length) {
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(slice)); break; }
+      catch (e) {
+        if (slice.length <= 1) break;
+        slice = slice.slice(0, Math.max(1, Math.floor(slice.length / 2)));
+      }
+    }
     renderHistory();
     renderHomeHist();
     writeBackup();
