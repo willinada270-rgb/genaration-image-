@@ -505,10 +505,14 @@
           </div>
           <div class="attach-row" id="attachRow"></div>
           <div class="chat-row">
-            <label class="chat-attach" for="imageFile" title="Joindre une image">
+            <label class="chat-attach" id="imageAttach" for="imageFile" title="Joindre une image (image de début en vidéo)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 20"/></svg>
             </label>
             <input type="file" id="imageFile" accept="image/*" hidden />
+            <label class="chat-attach" id="endImageAttach" for="endImageFile" title="Image de fin (dernière image de la vidéo)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 20"/><path d="M17 3v4M15 5h4"/></svg>
+            </label>
+            <input type="file" id="endImageFile" accept="image/*" hidden />
             <label class="chat-attach" id="videoAttach" for="videoFile" title="Joindre une vidéo (pour l'animer/éditer)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="14" height="16" rx="2"/><path d="m22 7-6 4 6 4z"/></svg>
             </label>
@@ -715,15 +719,17 @@
     if (which === "video" && !videoRatios.includes(formatSelect.value)) formatSelect.value = "16:9";
     if (currentType === "video") {
       videoAttach.style.display = "flex";
+      endImageAttach.style.display = "flex";
       countField.style.display = "none";
       resField.style.display = "flex";
       durField.style.display = "flex";
       multiShotField.style.display = "flex";
       engineField.style.display = "none";
-      document.getElementById("prompt").placeholder = "Décris la vidéo (ou le mouvement si tu joins une image/vidéo)…";
-      uploadHint.textContent = "Qualité : 720p et 1080p natifs (Kling). « 4K » = qualité max du modèle (rendu en 1080p).";
+      document.getElementById("prompt").placeholder = "Décris la vidéo / le mouvement (images de début et de fin optionnelles)…";
+      uploadHint.textContent = "Optionnel : 1re icône = image de début, 2e = image de fin (Kling anime entre les deux). Qualité 720p/1080p natifs.";
     } else {
       videoAttach.style.display = "none";
+      endImageAttach.style.display = "none";
       countField.style.display = "flex";
       resField.style.display = "none";
       durField.style.display = "none";
@@ -731,6 +737,7 @@
       engineField.style.display = "flex";
       multiShotToggle.checked = false;
       clearVideo();
+      clearEndImage();
       document.getElementById("prompt").placeholder = "Décris ce que tu veux générer…";
       uploadHint.textContent = "Joins une image pour la transformer (optionnel). ✨ optimise et traduit ton prompt en anglais pour un meilleur rendu.";
     }
@@ -815,39 +822,46 @@
 
   /* ----- Pièces jointes de la génération ----- */
   const imageFile = document.getElementById("imageFile");
+  const endImageFile = document.getElementById("endImageFile");
+  const endImageAttach = document.getElementById("endImageAttach");
   const videoFile = document.getElementById("videoFile");
   const attachRow = document.getElementById("attachRow");
   let selectedImageData = null;
+  let selectedEndImageData = null;
   let selectedVideoData = null;
   const MAX_VIDEO_BYTES = 3.5 * 1024 * 1024; // limite serveur (Vercel ~4.5 Mo de corps)
 
+  function attachChip(label, thumb, onRemove) {
+    const chip = document.createElement("div");
+    chip.className = "attach-chip";
+    chip.innerHTML = thumb + "<span>" + label + "</span>";
+    const b = document.createElement("button"); b.type = "button"; b.textContent = "Retirer";
+    b.onclick = onRemove;
+    chip.appendChild(b);
+    attachRow.appendChild(chip);
+  }
   function renderAttachments() {
     attachRow.innerHTML = "";
-    if (selectedImageData) {
-      const chip = document.createElement("div");
-      chip.className = "attach-chip";
-      chip.innerHTML = '<img src="' + selectedImageData + '" alt="" /><span>Image</span>';
-      const b = document.createElement("button"); b.type = "button"; b.textContent = "Retirer";
-      b.onclick = () => { selectedImageData = null; imageFile.value = ""; renderAttachments(); };
-      chip.appendChild(b);
-      attachRow.appendChild(chip);
-    }
-    if (selectedVideoData) {
-      const chip = document.createElement("div");
-      chip.className = "attach-chip";
-      chip.innerHTML = '<span class="ic">' + ICON.vid + "</span><span>Vidéo</span>";
-      const b = document.createElement("button"); b.type = "button"; b.textContent = "Retirer";
-      b.onclick = () => clearVideo();
-      chip.appendChild(b);
-      attachRow.appendChild(chip);
-    }
+    const startLabel = currentType === "video" ? "Image de début" : "Image";
+    if (selectedImageData) attachChip(startLabel, '<img src="' + selectedImageData + '" alt="" />',
+      () => { selectedImageData = null; imageFile.value = ""; renderAttachments(); });
+    if (selectedEndImageData) attachChip("Image de fin", '<img src="' + selectedEndImageData + '" alt="" />',
+      () => clearEndImage());
+    if (selectedVideoData) attachChip("Vidéo", '<span class="ic">' + ICON.vid + "</span>",
+      () => clearVideo());
   }
   function clearVideo() { selectedVideoData = null; videoFile.value = ""; renderAttachments(); }
+  function clearEndImage() { selectedEndImageData = null; endImageFile.value = ""; renderAttachments(); }
 
   imageFile.addEventListener("change", () => {
     const file = imageFile.files && imageFile.files[0];
     if (!file) return;
     compressImage(file, (data) => { selectedImageData = data; renderAttachments(); });
+  });
+  endImageFile.addEventListener("change", () => {
+    const file = endImageFile.files && endImageFile.files[0];
+    if (!file) return;
+    compressImage(file, (data) => { selectedEndImageData = data; renderAttachments(); });
   });
   videoFile.addEventListener("change", () => {
     const file = videoFile.files && videoFile.files[0];
@@ -911,13 +925,14 @@
 
   // Un seul appel au backend → renvoie l'URL du média
   async function generateOne(params) {
-    const { type, prompt, image, video, resolution, aspectRatio, duration, engine } = params;
+    const { type, prompt, image, endImage, video, resolution, aspectRatio, duration, engine } = params;
     const res = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type, prompt,
         image: image || undefined,
+        endImage: endImage || undefined,
         video: video || undefined,
         resolution: resolution || undefined,
         aspectRatio: aspectRatio || undefined,
@@ -1134,6 +1149,7 @@
       type: currentType,
       prompt,
       image: currentType !== "chat" ? selectedImageData : null,
+      endImage: currentType === "video" ? selectedEndImageData : null,
       video: currentType === "video" ? selectedVideoData : null,
       resolution: currentType === "video" ? resSelect.value : undefined,
       aspectRatio: formatSelect.value,
@@ -1142,7 +1158,8 @@
       engine: currentType === "image" ? engineSelect.value : undefined,
     };
     document.getElementById("prompt").value = "";
-    selectedImageData = null; selectedVideoData = null; imageFile.value = ""; videoFile.value = "";
+    selectedImageData = null; selectedEndImageData = null; selectedVideoData = null;
+    imageFile.value = ""; endImageFile.value = ""; videoFile.value = "";
     renderAttachments();
     goBtn.disabled = true;
     await dispatchGeneration(params, true);
