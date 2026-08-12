@@ -99,33 +99,6 @@ async function openaiImage({ key, prompt, aspectRatio, image }) {
   return "data:image/png;base64," + b64;
 }
 
-// ---- Moteur GPT Image 2 via OpenRouter ----
-const OPENROUTER_IMAGES = "https://openrouter.ai/api/v1/images";
-const OPENROUTER_IMAGE_MODEL = process.env.OPENROUTER_IMAGE_MODEL || "openai/gpt-image-2";
-async function openrouterImage({ key, prompt, aspectRatio, image }) {
-  const finalPrompt = image
-    ? "Using the attached reference image as the base, transform it as follows while keeping its overall composition, framing and main subject: " + prompt
-    : prompt;
-  const body = {
-    model: OPENROUTER_IMAGE_MODEL,
-    prompt: finalPrompt,
-    aspect_ratio: aspectRatio || "1:1", // OpenRouter accepte directement les ratios
-    quality: "high",
-    n: 1,
-  };
-  if (image) body.input_references = [{ type: "image_url", image_url: { url: image } }];
-  const r = await fetch(OPENROUTER_IMAGES, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data?.error?.message || "Erreur OpenRouter (image).");
-  const item = data?.data?.[0];
-  if (!item?.b64_json) throw new Error("Réponse OpenRouter inattendue (pas d'image).");
-  return "data:" + (item.media_type || "image/png") + ";base64," + item.b64_json;
-}
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Méthode non autorisée" });
@@ -153,14 +126,6 @@ export default async function handler(req, res) {
       const okey = process.env.OPENAI_API_KEY;
       if (!okey) return res.status(500).json({ error: "Clé OPENAI_API_KEY manquante côté serveur." });
       const url = await openaiImage({ key: okey, prompt: prompt.trim(), aspectRatio, image });
-      return res.status(200).json({ url });
-    }
-
-    // Moteur GPT Image 2 via OpenRouter — réponse en base64
-    if (type === "image" && engine === "openrouter") {
-      const okey = process.env.OPENROUTER_API_KEY;
-      if (!okey) return res.status(500).json({ error: "Clé OPENROUTER_API_KEY manquante côté serveur." });
-      const url = await openrouterImage({ key: okey, prompt: prompt.trim(), aspectRatio, image });
       return res.status(200).json({ url });
     }
 
