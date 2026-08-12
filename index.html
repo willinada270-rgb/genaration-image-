@@ -459,6 +459,13 @@
                 <option value="3:2">3:2 — Photo</option>
               </select>
             </div>
+            <div class="ctrl-field" id="autoOptField">
+              <label class="switch" title="Enrichir automatiquement le prompt avant chaque génération">
+                <input type="checkbox" id="autoOptToggle" aria-label="Optimisation automatique du prompt" />
+                <span class="switch-track"></span>
+              </label>
+              <span class="lbl-inline">Auto ✨</span>
+            </div>
             <div class="ctrl-field" id="countField">
               <span class="lbl-inline">Images</span>
               <select id="countSelect" aria-label="Nombre d'images">
@@ -570,6 +577,7 @@
             <label class="lbl" for="ttsText" style="margin-top:12px">Texte ou script</label>
             <textarea id="ttsText" rows="8" placeholder="Écris le texte, ou colle ton script complet (narration, monologue…)"></textarea>
             <div class="btn-line">
+              <button class="hist-btn grow" id="ttsImproveBtn">✨ Améliorer le texte</button>
               <button class="primary-btn grow" id="ttsBtn">Générer la voix</button>
             </div>
             <div class="tool-status" id="ttsStatus"></div>
@@ -1111,8 +1119,16 @@
       return;
     }
 
-    const prompt = document.getElementById("prompt").value.trim();
+    let prompt = document.getElementById("prompt").value.trim();
     if (!prompt) { setStatus("warn", "Écris d'abord un prompt.", true); return; }
+    // Auto-optimisation (façon ChatGPT) avant génération, si activée
+    if (autoOptToggle && autoOptToggle.checked) {
+      goBtn.disabled = true;
+      setStatus("spinner", "Optimisation du prompt…");
+      try { prompt = await enrichPrompt(prompt, currentType, currentType !== "chat" && !!selectedImageData); }
+      catch (e) { /* on garde le prompt brut si l'optimisation échoue */ }
+      goBtn.disabled = false;
+    }
     setStatus("", "");
     const params = {
       type: currentType,
@@ -1133,30 +1149,37 @@
     goBtn.disabled = false;
   });
 
-  /* ----- Optimiseur de prompt (via Claude) ----- */
+  /* ----- Optimiseur de prompt (via Claude) — enrichissement fort façon ChatGPT ----- */
   const optimizeBtn = document.getElementById("optimizeBtn");
+  const autoOptToggle = document.getElementById("autoOptToggle");
+
+  function optimizerSystem(mode, hasRef) {
+    if (hasRef) {
+      return "The user attached a reference image they want to TRANSFORM (image-to-image). Rewrite their instruction into ONE concise English editing instruction describing only the CHANGES to apply, while preserving the image's overall composition, framing and main subject. Do NOT invent a brand-new unrelated scene. Keep it under 50 words. Output ONLY the final instruction — no quotes, no preamble.";
+    }
+    if (mode === "video") {
+      return "You are a world-class prompt engineer for state-of-the-art AI video models. Expand the user's idea into ONE vivid, cinematic English prompt: clear subject and action, camera movement, setting, time of day, lighting, mood and film style. Favor dynamic, appealing lighting and rich detail. Keep the user's intent; never dull or desaturate the palette unless they explicitly asked for it. Keep it under 80 words. Output ONLY the prompt — no quotes, no preamble, no lists.";
+    }
+    return "You are a world-class prompt engineer for state-of-the-art AI image models (FLUX, GPT Image). Expand the user's idea into ONE vivid, richly detailed English prompt: precise subject, composition and framing, art or photography style, flattering lighting, appealing colors and mood, plus quality tags (sharp focus, high detail, professional, natural lighting). Preserve the user's intent; keep colors vibrant and clean — never dull or washed out unless explicitly requested. Keep it under 75 words. Output ONLY the prompt — no quotes, no preamble, no lists.";
+  }
+  async function enrichPrompt(text, mode, hasRef) {
+    const res = await fetch("/api/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ system: optimizerSystem(mode, hasRef), messages: [{ role: "user", content: text }] }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.reply) throw new Error(data.error || "Échec de l'optimisation.");
+    return data.reply.trim().replace(/^["']|["']$/g, "");
+  }
   async function optimizePrompt() {
     const ta = document.getElementById("prompt");
     const raw = ta.value.trim();
     if (!raw) { setStatus("warn", "Écris d'abord une idée à optimiser.", true); return; }
     optimizeBtn.classList.add("busy");
     setStatus("spinner", "Optimisation du prompt…");
-    const hasRef = currentType !== "chat" && !!selectedImageData;
-    const sys = hasRef
-      ? "The user attached a reference image they want to TRANSFORM (image-to-image). Rewrite their instruction into ONE concise English editing instruction that describes only the CHANGES to apply to that existing image, while preserving its overall composition, framing and main subject. Do NOT invent a brand-new unrelated scene. Keep it under 50 words. Output ONLY the final instruction — no quotes, no preamble."
-      : currentType === "video"
-      ? "You are an expert prompt engineer for AI video generation. Rewrite the user's idea into ONE single, richly detailed English prompt describing subject, action and motion, camera movement, setting, lighting, mood and visual style. Keep it under 80 words. Output ONLY the final prompt text — no quotes, no preamble, no explanation, no options."
-      : "You are an expert prompt engineer for AI image generation. Rewrite the user's idea into ONE single, richly detailed English prompt describing subject, composition, art style, lighting, color palette, and quality tags. Keep it under 70 words. Output ONLY the final prompt text — no quotes, no preamble, no explanation, no options.";
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ system: sys, messages: [{ role: "user", content: raw }] }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.reply) throw new Error(data.error || "Échec de l'optimisation.");
-      ta.value = data.reply.trim().replace(/^["']|["']$/g, "");
-      setStatus("ok", "Prompt optimisé en anglais ✓");
+      ta.value = await enrichPrompt(raw, currentType, currentType !== "chat" && !!selectedImageData);
+      setStatus("ok", "Prompt optimisé ✓");
       ta.focus();
     } catch (err) {
       setStatus("warn", err.message || "Erreur.", true);
@@ -1687,6 +1710,30 @@
     finally { ttsBtn.disabled = false; }
   }
   ttsBtn.addEventListener("click", doTts);
+
+  // Améliorer le texte pour une narration naturelle (équivalent ✨ pour la voix)
+  const ttsImproveBtn = document.getElementById("ttsImproveBtn");
+  async function improveTtsText() {
+    const raw = ttsText.value.trim();
+    if (!raw) { toolStatus(ttsStatus, "warn", "Écris d'abord le texte à améliorer."); return; }
+    ttsImproveBtn.disabled = true;
+    toolStatus(ttsStatus, "spinner", "Amélioration du texte…");
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: "You refine text for natural-sounding text-to-speech narration. Keep the SAME language as the input. Improve punctuation, rhythm and phrasing so it reads smoothly aloud (natural pauses via commas and periods, spell out abbreviations and numbers where it helps clarity), while keeping the meaning and tone intact. Do NOT add commentary, titles, quotes or stage directions. Output ONLY the improved text.",
+          messages: [{ role: "user", content: raw }],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.reply) throw new Error(data.error || "Échec de l'amélioration.");
+      ttsText.value = data.reply.trim();
+      toolStatus(ttsStatus, "ok", "Texte amélioré ✓");
+    } catch (err) { toolStatus(ttsStatus, "warn", err.message || "Erreur."); }
+    finally { ttsImproveBtn.disabled = false; }
+  }
+  ttsImproveBtn.addEventListener("click", improveTtsText);
 
   /* ================= Avatar (Kling) ================= */
   const avatarImageFile = document.getElementById("avatarImageFile");
