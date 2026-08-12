@@ -28,13 +28,14 @@ const MODELS = {
   // Vidéo — Kling v3 (texte→vidéo et image→vidéo, audio, jusqu'à 15 s)
   video: {
     slug: SLUGS.video,
-    buildInput: ({ prompt, image, aspectRatio, duration, resolution }) => ({
+    buildInput: ({ prompt, image, endImage, aspectRatio, duration, resolution }) => ({
       prompt,
       mode: resolution === "720p" ? "standard" : "pro", // standard=720p, pro=1080p (4K → pro, max Kling)
       duration: duration || 5,                // 3 à 15 s
       aspect_ratio: aspectRatio || "16:9",
       generate_audio: false,
-      ...(image ? { start_image: image } : {}), // image→vidéo si fournie
+      ...(image ? { start_image: image } : {}),   // image de début (image→vidéo)
+      ...(endImage ? { end_image: endImage } : {}), // image de fin (interpolation début→fin)
     }),
   },
   // Vidéo à partir d'une vidéo — Kling v3 Omni (édition / animation)
@@ -133,7 +134,8 @@ export default async function handler(req, res) {
 
   try {
     const { type, prompt, aspectRatio, duration, resolution, engine } = req.body || {};
-    const image = req.body?.image || req.body?.imageUrl; // data URI ou URL
+    const image = req.body?.image || req.body?.imageUrl; // data URI ou URL (image de début)
+    const endImage = req.body?.endImage;                  // data URI ou URL (image de fin, vidéo)
     const video = req.body?.video;                        // data URI ou URL (vidéo de départ)
     const audio = req.body?.audio;                        // data URI ou URL (pour l'avatar)
 
@@ -173,7 +175,7 @@ export default async function handler(req, res) {
     // Choix du modèle : avatar dédié, sinon vidéo→édition si une vidéo est fournie.
     const key = type === "avatar" ? "avatar" : (type === "video" && video ? "video_edit" : type);
     const model = MODELS[key];
-    const input = model.buildInput({ prompt: prompt ? prompt.trim() : "", image, video, audio, aspectRatio, duration, resolution });
+    const input = model.buildInput({ prompt: prompt ? prompt.trim() : "", image, endImage, video, audio, aspectRatio, duration, resolution });
 
     // 1) Créer la prédiction
     const createRes = await fetch(`${REPLICATE}/models/${model.slug}/predictions`, {
