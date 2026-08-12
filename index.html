@@ -1141,9 +1141,12 @@
     if (!raw) { setStatus("warn", "Écris d'abord une idée à optimiser.", true); return; }
     optimizeBtn.classList.add("busy");
     setStatus("spinner", "Optimisation du prompt…");
-    const sys = currentType === "video"
+    const hasRef = currentType !== "chat" && !!selectedImageData;
+    const sys = hasRef
+      ? "The user attached a reference image they want to TRANSFORM (image-to-image). Rewrite their instruction into ONE concise English editing instruction that describes only the CHANGES to apply to that existing image, while preserving its overall composition, framing and main subject. Do NOT invent a brand-new unrelated scene. Keep it under 50 words. Output ONLY the final instruction — no quotes, no preamble."
+      : currentType === "video"
       ? "You are an expert prompt engineer for AI video generation. Rewrite the user's idea into ONE single, richly detailed English prompt describing subject, action and motion, camera movement, setting, lighting, mood and visual style. Keep it under 80 words. Output ONLY the final prompt text — no quotes, no preamble, no explanation, no options."
-      : "You are an expert prompt engineer for AI image generation (FLUX). Rewrite the user's idea into ONE single, richly detailed English prompt describing subject, composition, art style, lighting, color palette, and quality tags. Keep it under 70 words. Output ONLY the final prompt text — no quotes, no preamble, no explanation, no options.";
+      : "You are an expert prompt engineer for AI image generation. Rewrite the user's idea into ONE single, richly detailed English prompt describing subject, composition, art style, lighting, color palette, and quality tags. Keep it under 70 words. Output ONLY the final prompt text — no quotes, no preamble, no explanation, no options.";
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
