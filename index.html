@@ -114,6 +114,15 @@
   .msg .dl svg { width: 15px; height: 15px; border: none; }
   .msg .dl:hover { color: var(--orange); border-color: var(--orange); }
   .thread-empty { color: var(--muted); text-align: center; font-size: 14px; padding: 40px 10px; margin: auto; }
+  .gen-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 560px; }
+  .empty-ic { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: var(--orange-soft); color: var(--orange); margin-bottom: 4px; }
+  .empty-ic svg { width: 28px; height: 28px; }
+  .empty-title { font-size: 19px; font-weight: 700; color: var(--text); letter-spacing: -.2px; }
+  .empty-sub { font-size: 14px; color: var(--muted); }
+  .suggest-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+  .suggest-chip { background: var(--surface); border: 1px solid var(--line-strong); color: var(--text); border-radius: 999px; padding: 8px 14px; font-family: inherit; font-size: 13px; cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast), transform var(--t-fast); text-align: left; }
+  .suggest-chip:hover { color: var(--orange); border-color: var(--orange); }
+  .suggest-chip:active { transform: scale(.97); }
 
   /* ---------- Composer (bas de page) ---------- */
   .composer { flex: none; }
@@ -166,6 +175,27 @@
   .lb-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: #fff; font-size: 34px; line-height: 1; cursor: pointer; opacity: .8; }
   .lb-close:hover { opacity: 1; color: var(--orange); }
   .msg img { cursor: zoom-in; }
+
+  /* ---------- Outils Voix / Avatar ---------- */
+  .tool-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 4px 2px 8px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+  .card-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .card-sub { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+  .text-input { width: 100%; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 10px; color: var(--text); padding: 11px 12px; font-family: inherit; font-size: 14px; }
+  .text-input:focus { outline: none; border-color: var(--orange); }
+  select.text-input { cursor: pointer; }
+  .btn-line { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .btn-line .grow { flex: 1; min-width: 140px; }
+  .primary-btn { background: var(--orange); color: #fff; border: none; border-radius: 10px; padding: 11px 16px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background var(--t-fast), transform var(--t-fast), opacity var(--t-fast); }
+  .primary-btn:hover:not(:disabled) { background: var(--orange-hover); }
+  .primary-btn:active:not(:disabled) { transform: scale(.98); }
+  .primary-btn:disabled { opacity: .55; cursor: not-allowed; }
+  .tool-status { font-size: 13px; margin-top: 10px; min-height: 18px; display: flex; align-items: center; gap: 8px; }
+  .tool-status.err { color: var(--red); }
+  .tool-status.ok { color: var(--green); }
+  .attach-chip audio { height: 30px; }
+  #ttsResult audio, #avatarResult video { width: 100%; margin-top: 14px; border-radius: 10px; border: 1px solid var(--line); }
+  #ttsResult .btn-line, #avatarResult .btn-line { margin-top: 10px; }
   #status, #chatStatus { margin-top: 10px; text-align: center; font-size: 13px; min-height: 18px; display: flex; align-items: center; justify-content: center; gap: 8px; }
   #status.err { color: var(--red); }
   #status.ok { color: var(--green); }
@@ -226,6 +256,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="14" height="16" rx="2"/><path d="m22 7-6 4 6 4z"/></svg>
         <span class="tab-label">Vidéo</span>
       </button>
+      <button type="button" class="tab" data-tab="voice" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>
+        <span class="tab-label">Voix</span>
+      </button>
+      <button type="button" class="tab" data-tab="avatar" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M6 21v-1a6 6 0 0 1 12 0v1"/><path d="m21 7-2 1 2 1"/></svg>
+        <span class="tab-label">Avatar</span>
+      </button>
       <button type="button" class="tab" data-tab="chat" role="tab" aria-selected="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         <span class="tab-label">Chat</span>
@@ -277,7 +315,12 @@
       <!-- Panneau génération (image + vidéo) en mode conversation -->
       <div class="panel active" id="genPanel">
         <div class="thread" id="genLog">
-          <div class="thread-empty" id="genEmpty">Décris ce que tu veux générer, puis clique sur Générer.</div>
+          <div class="thread-empty gen-empty" id="genEmpty">
+            <div class="empty-ic" id="genEmptyIc"></div>
+            <div class="empty-title" id="genEmptyTitle">Génère ta première image</div>
+            <div class="empty-sub" id="genEmptySub">Décris ce que tu veux — ou pars d'une de ces idées :</div>
+            <div class="suggest-row" id="genSuggest"></div>
+          </div>
         </div>
         <div class="composer">
           <div class="res-row" id="resRow">
@@ -361,6 +404,79 @@
           </div>
         </div>
       </div>
+
+      <!-- Panneau Voix (Fish Audio : clonage + synthèse) -->
+      <div class="panel" id="voicePanel">
+        <div class="tool-scroll">
+          <div class="card">
+            <div class="card-title">1 · Cloner une voix</div>
+            <p class="card-sub">Envoie un échantillon audio clair (10 s min, voix seule, sans musique). Formats : mp3, wav, m4a. Max ~4 Mo.</p>
+            <label class="lbl" for="voiceName">Nom de la voix</label>
+            <input class="text-input" type="text" id="voiceName" placeholder="Ex. Ma voix" />
+            <div class="attach-row" id="voiceSampleRow"></div>
+            <div class="btn-line">
+              <label class="hist-btn grow" for="voiceSampleFile">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                Choisir un échantillon
+              </label>
+              <input type="file" id="voiceSampleFile" accept="audio/*" hidden />
+              <button class="primary-btn grow" id="cloneBtn">Cloner la voix</button>
+            </div>
+            <div class="tool-status" id="cloneStatus"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">2 · Faire parler / lire un script</div>
+            <p class="card-sub">Un mot, une phrase ou un script entier : les textes longs sont découpés automatiquement puis assemblés en un seul audio.</p>
+            <label class="lbl" for="voiceSelect">Voix</label>
+            <select class="text-input" id="voiceSelect" aria-label="Choisir une voix clonée"></select>
+            <label class="lbl" for="ttsText" style="margin-top:12px">Texte ou script</label>
+            <textarea id="ttsText" rows="8" placeholder="Écris le texte, ou colle ton script complet (narration, monologue…)"></textarea>
+            <div class="btn-line">
+              <button class="primary-btn grow" id="ttsBtn">Générer la voix</button>
+            </div>
+            <div class="tool-status" id="ttsStatus"></div>
+            <div id="ttsResult"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panneau Avatar (Kling : image + audio → vidéo parlante) -->
+      <div class="panel" id="avatarPanel">
+        <div class="tool-scroll">
+          <div class="card">
+            <div class="card-title">Vidéo parlante (avatar)</div>
+            <p class="card-sub">Une image de portrait + un audio → une vidéo où le personnage parle (lip-sync Kling).</p>
+
+            <label class="lbl">Portrait</label>
+            <div class="attach-row" id="avatarImageRow"></div>
+            <div class="btn-line">
+              <label class="hist-btn grow" for="avatarImageFile">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 20"/></svg>
+                Choisir une image
+              </label>
+              <input type="file" id="avatarImageFile" accept="image/*" hidden />
+            </div>
+
+            <label class="lbl" style="margin-top:12px">Audio</label>
+            <div class="attach-row" id="avatarAudioRow"></div>
+            <div class="btn-line">
+              <label class="hist-btn grow" for="avatarAudioFile">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                Choisir un audio
+              </label>
+              <input type="file" id="avatarAudioFile" accept="audio/*" hidden />
+            </div>
+            <p class="card-sub" id="avatarAudioHint">Astuce : génère une voix dans l'onglet Voix, puis clique « Envoyer vers Avatar ».</p>
+
+            <div class="btn-line">
+              <button class="primary-btn grow" id="avatarBtn">Générer la vidéo</button>
+            </div>
+            <div class="tool-status" id="avatarStatus"></div>
+            <div id="avatarResult"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -410,6 +526,8 @@
   const tabs = document.querySelectorAll(".tab");
   const genPanel = document.getElementById("genPanel");
   const chatPanel = document.getElementById("chatPanel");
+  const voicePanel = document.getElementById("voicePanel");
+  const avatarPanel = document.getElementById("avatarPanel");
   const goBtn = document.getElementById("goBtn");
   const statusEl = document.getElementById("status");
   const uploadHint = document.getElementById("uploadHint");
@@ -430,14 +548,12 @@
       t.classList.toggle("active", on);
       t.setAttribute("aria-selected", on ? "true" : "false");
     });
-    const titles = { image: "Génération d'image", video: "Génération de vidéo", chat: "Chat — Claude Sonnet 4.6" };
+    const titles = { image: "Génération d'image", video: "Génération de vidéo", chat: "Chat — Claude Sonnet 4.6", voice: "Voix — clonage & synthèse", avatar: "Avatar — vidéo parlante" };
     if (mainTitle) mainTitle.textContent = titles[which] || "Générateur IA";
-    if (which === "chat") {
-      genPanel.classList.remove("active");
-      chatPanel.classList.add("active");
-      return;
-    }
-    chatPanel.classList.remove("active");
+    [genPanel, chatPanel, voicePanel, avatarPanel].forEach((p) => p.classList.remove("active"));
+    if (which === "chat") { chatPanel.classList.add("active"); return; }
+    if (which === "voice") { voicePanel.classList.add("active"); return; }
+    if (which === "avatar") { avatarPanel.classList.add("active"); return; }
     genPanel.classList.add("active");
     currentType = which;
     resRow.style.display = "flex";
@@ -464,6 +580,41 @@
       document.getElementById("prompt").placeholder = "Décris ce que tu veux générer…";
       uploadHint.textContent = "Joins une image pour la transformer (optionnel). ✨ optimise et traduit ton prompt en anglais pour un meilleur rendu.";
     }
+    renderGenEmpty();
+  }
+
+  /* ----- Écran d'accueil : titre + suggestions cliquables ----- */
+  const GEN_SUGGEST = {
+    image: [
+      "Un renard roux dans une forêt enneigée, lumière dorée du matin, ultra détaillé",
+      "Portrait cinématique façon cyberpunk, néons bleus et roses",
+      "Logo minimaliste et moderne pour une marque de café",
+      "Paysage de montagnes au lever du soleil, brume, style photo réaliste",
+    ],
+    video: [
+      "Vagues de l'océan au coucher du soleil, mouvement lent",
+      "Une rue de Tokyo sous la pluie, néons, ambiance nocturne",
+      "Time-lapse de nuages au-dessus d'une vallée verdoyante",
+    ],
+  };
+  const GEN_EMPTY_IC = {
+    image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 20"/></svg>',
+    video: ICON.vid,
+  };
+  function renderGenEmpty() {
+    const empty = document.getElementById("genEmpty");
+    if (!empty) return;
+    const t = currentType === "video" ? "video" : "image";
+    document.getElementById("genEmptyIc").innerHTML = GEN_EMPTY_IC[t];
+    document.getElementById("genEmptyTitle").textContent = t === "video" ? "Génère ta première vidéo" : "Génère ta première image";
+    const box = document.getElementById("genSuggest");
+    box.innerHTML = "";
+    GEN_SUGGEST[t].forEach((s) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "suggest-chip"; b.textContent = s;
+      b.onclick = () => { const p = document.getElementById("prompt"); p.value = s; p.focus(); };
+      box.appendChild(b);
+    });
   }
   tabs.forEach((tab, i) => {
     tab.addEventListener("click", () => {
@@ -1067,9 +1218,245 @@
     chatLog.innerHTML = '<div class="thread-empty">Pose ta question à Claude Sonnet 4.6</div>';
   });
 
+  /* ================= Voix (Fish Audio) ================= */
+  const VOICES_KEY = "genia_voices";
+  const voiceNameEl = document.getElementById("voiceName");
+  const voiceSampleFile = document.getElementById("voiceSampleFile");
+  const voiceSampleRow = document.getElementById("voiceSampleRow");
+  const cloneBtn = document.getElementById("cloneBtn");
+  const cloneStatus = document.getElementById("cloneStatus");
+  const voiceSelect = document.getElementById("voiceSelect");
+  const ttsText = document.getElementById("ttsText");
+  const ttsBtn = document.getElementById("ttsBtn");
+  const ttsStatus = document.getElementById("ttsStatus");
+  const ttsResult = document.getElementById("ttsResult");
+  let voiceSampleData = null;
+  let lastTtsAudio = null;
+
+  function toolStatus(el, kind, text) {
+    let icon = "";
+    if (kind === "spinner") icon = '<span class="spinner"></span>';
+    else if (kind === "ok") icon = ICON.check;
+    else if (kind === "warn") icon = ICON.warn;
+    el.className = "tool-status" + (kind === "warn" ? " err" : kind === "ok" ? " ok" : "");
+    el.innerHTML = text ? icon + "<span>" + text + "</span>" : "";
+  }
+  function getVoices() { try { return JSON.parse(localStorage.getItem(VOICES_KEY)) || []; } catch { return []; } }
+  function saveVoices(list) { localStorage.setItem(VOICES_KEY, JSON.stringify(list.slice(0, 50))); }
+  function renderVoiceOptions() {
+    const list = getVoices();
+    voiceSelect.innerHTML = list.length
+      ? list.map((v) => '<option value="' + v.id + '">' + (v.title || "Voix").replace(/</g, "&lt;") + "</option>").join("")
+      : '<option value="">— Clone d\'abord une voix ci-dessus —</option>';
+  }
+
+  voiceSampleFile.addEventListener("change", () => {
+    const f = voiceSampleFile.files && voiceSampleFile.files[0];
+    if (!f) return;
+    if (f.size > 2.5 * 1024 * 1024) { toolStatus(cloneStatus, "warn", "Fichier trop lourd (max ~2,5 Mo). Prends un extrait plus court en mp3."); voiceSampleFile.value = ""; return; }
+    readFile(f, (data) => {
+      voiceSampleData = data;
+      voiceSampleRow.innerHTML = '<div class="attach-chip"><span class="ic">' + ICON.vid + '</span><span>' + f.name.replace(/</g, "&lt;") + '</span></div>';
+      toolStatus(cloneStatus, "", "");
+    });
+  });
+
+  async function doClone() {
+    if (!voiceSampleData) { toolStatus(cloneStatus, "warn", "Choisis d'abord un échantillon audio."); return; }
+    const title = (voiceNameEl.value || "Ma voix").trim();
+    cloneBtn.disabled = true;
+    toolStatus(cloneStatus, "spinner", "Clonage en cours…");
+    try {
+      const res = await fetch("/api/voice", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clone", title, audio: voiceSampleData }) });
+      const data = await res.json();
+      if (!res.ok || !data.id) throw new Error(data.error || "Échec du clonage.");
+      const list = getVoices(); list.unshift({ id: data.id, title, ts: Date.now() }); saveVoices(list);
+      renderVoiceOptions(); voiceSelect.value = data.id;
+      toolStatus(cloneStatus, "ok", "Voix clonée ✓ — sélectionnée ci-dessous.");
+      voiceSampleData = null; voiceSampleFile.value = ""; voiceSampleRow.innerHTML = ""; voiceNameEl.value = "";
+    } catch (err) { toolStatus(cloneStatus, "warn", err.message || "Erreur."); }
+    finally { cloneBtn.disabled = false; }
+  }
+  cloneBtn.addEventListener("click", doClone);
+
+  function showTtsResult(playUrl, downloadName, avatarUri) {
+    lastTtsAudio = avatarUri || playUrl;
+    ttsResult.innerHTML = "";
+    const audio = document.createElement("audio"); audio.src = playUrl; audio.controls = true;
+    ttsResult.appendChild(audio);
+    const line = document.createElement("div"); line.className = "btn-line";
+    const dl = document.createElement("button"); dl.className = "hist-btn grow"; dl.innerHTML = ICON.download + "<span>Télécharger</span>";
+    dl.onclick = () => { const a = document.createElement("a"); a.href = playUrl; a.download = downloadName || "voix.mp3"; document.body.appendChild(a); a.click(); a.remove(); };
+    const toAv = document.createElement("button"); toAv.className = "primary-btn grow"; toAv.textContent = "Envoyer vers Avatar →";
+    toAv.onclick = () => { setAvatarAudio(lastTtsAudio, downloadName || "voix.mp3"); selectTab("avatar"); };
+    line.appendChild(dl); line.appendChild(toAv);
+    ttsResult.appendChild(line);
+  }
+
+  // Découpe un script long en segments <= maxLen, en respectant paragraphes et phrases.
+  function splitScript(text, maxLen) {
+    maxLen = maxLen || 1500;
+    const clean = text.replace(/\r/g, "").trim();
+    if (clean.length <= maxLen) return [clean];
+    const paras = clean.split(/\n{1,}/).map((s) => s.trim()).filter(Boolean);
+    const chunks = [];
+    let cur = "";
+    const flush = () => { if (cur.trim()) chunks.push(cur.trim()); cur = ""; };
+    for (const para of paras) {
+      if ((cur + "\n" + para).trim().length <= maxLen) { cur = cur ? cur + "\n" + para : para; continue; }
+      flush();
+      if (para.length <= maxLen) { cur = para; continue; }
+      const sents = para.match(/[^.!?…]+[.!?…]*\s*/g) || [para];
+      for (const s of sents) {
+        if ((cur + s).length <= maxLen) { cur += s; continue; }
+        flush();
+        if (s.length <= maxLen) { cur = s; }
+        else { for (let i = 0; i < s.length; i += maxLen) chunks.push(s.slice(i, i + maxLen).trim()); }
+      }
+    }
+    flush();
+    return chunks.length ? chunks : [clean];
+  }
+
+  // Assemble plusieurs AudioBuffers en un seul, puis exporte en WAV.
+  function concatBuffers(ctx, buffers) {
+    const numCh = Math.max.apply(null, buffers.map((b) => b.numberOfChannels));
+    const sampleRate = buffers[0].sampleRate;
+    const total = buffers.reduce((n, b) => n + b.length, 0);
+    const out = ctx.createBuffer(numCh, total, sampleRate);
+    for (let c = 0; c < numCh; c++) {
+      const data = out.getChannelData(c);
+      let off = 0;
+      for (const b of buffers) { data.set(b.getChannelData(Math.min(c, b.numberOfChannels - 1)), off); off += b.length; }
+    }
+    return out;
+  }
+  function audioBufferToWav(buffer) {
+    const numCh = buffer.numberOfChannels, sr = buffer.sampleRate, n = buffer.length;
+    const blockAlign = numCh * 2, dataSize = n * blockAlign;
+    const view = new DataView(new ArrayBuffer(44 + dataSize));
+    const wr = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+    wr(0, "RIFF"); view.setUint32(4, 36 + dataSize, true); wr(8, "WAVE"); wr(12, "fmt ");
+    view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, numCh, true);
+    view.setUint32(24, sr, true); view.setUint32(28, sr * blockAlign, true);
+    view.setUint16(32, blockAlign, true); view.setUint16(34, 16, true); wr(36, "data"); view.setUint32(40, dataSize, true);
+    let off = 44;
+    const chs = []; for (let c = 0; c < numCh; c++) chs.push(buffer.getChannelData(c));
+    for (let i = 0; i < n; i++) for (let c = 0; c < numCh; c++) {
+      let s = Math.max(-1, Math.min(1, chs[c][i])); view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true); off += 2;
+    }
+    return new Blob([view], { type: "audio/wav" });
+  }
+  function blobToDataUri(blob) { return new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); }); }
+  function dataUriToArrayBuffer(uri) {
+    const bin = atob(uri.split(",")[1]); const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+  }
+  async function ttsChunk(refId, text) {
+    const res = await fetch("/api/voice", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "tts", reference_id: refId, text }) });
+    const data = await res.json();
+    if (!res.ok || !data.audio) throw new Error(data.error || "Échec de la synthèse.");
+    return data.audio;
+  }
+
+  async function doTts() {
+    const refId = voiceSelect.value;
+    const text = ttsText.value.trim();
+    if (!refId) { toolStatus(ttsStatus, "warn", "Sélectionne une voix (clone-en une d'abord)."); return; }
+    if (!text) { toolStatus(ttsStatus, "warn", "Écris le texte ou colle ton script."); return; }
+    ttsBtn.disabled = true;
+    ttsResult.innerHTML = "";
+    const chunks = splitScript(text, 1500);
+    try {
+      // Cas simple : un seul segment → mp3 direct
+      if (chunks.length === 1) {
+        toolStatus(ttsStatus, "spinner", "Génération de la voix…");
+        const uri = await ttsChunk(refId, chunks[0]);
+        toolStatus(ttsStatus, "ok", "Voix générée ✓");
+        showTtsResult(uri, "voix.mp3", uri);
+        return;
+      }
+      // Script long : on synthétise chaque segment puis on assemble
+      const decoded = [];
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      for (let i = 0; i < chunks.length; i++) {
+        toolStatus(ttsStatus, "spinner", "Génération… segment " + (i + 1) + "/" + chunks.length);
+        const uri = await ttsChunk(refId, chunks[i]);
+        decoded.push(await ctx.decodeAudioData(dataUriToArrayBuffer(uri)));
+      }
+      toolStatus(ttsStatus, "spinner", "Assemblage de l'audio…");
+      const wav = audioBufferToWav(concatBuffers(ctx, decoded));
+      ctx.close();
+      const url = URL.createObjectURL(wav);
+      const dataUri = await blobToDataUri(wav);
+      toolStatus(ttsStatus, "ok", "Voix générée ✓ (" + chunks.length + " segments assemblés)");
+      showTtsResult(url, "script.wav", dataUri);
+    } catch (err) { toolStatus(ttsStatus, "warn", err.message || "Erreur."); }
+    finally { ttsBtn.disabled = false; }
+  }
+  ttsBtn.addEventListener("click", doTts);
+
+  /* ================= Avatar (Kling) ================= */
+  const avatarImageFile = document.getElementById("avatarImageFile");
+  const avatarAudioFile = document.getElementById("avatarAudioFile");
+  const avatarImageRow = document.getElementById("avatarImageRow");
+  const avatarAudioRow = document.getElementById("avatarAudioRow");
+  const avatarBtn = document.getElementById("avatarBtn");
+  const avatarStatus = document.getElementById("avatarStatus");
+  const avatarResult = document.getElementById("avatarResult");
+  let avatarImageData = null;
+  let avatarAudioData = null;
+
+  function renderAvatarImage() {
+    avatarImageRow.innerHTML = avatarImageData
+      ? '<div class="attach-chip"><img src="' + avatarImageData + '" alt="" /><span>Portrait</span></div>' : "";
+  }
+  function setAvatarAudio(data, name) {
+    avatarAudioData = data;
+    avatarAudioRow.innerHTML = '<div class="attach-chip"><span class="ic">' + ICON.vid + '</span><span>' + (name || "Audio").replace(/</g, "&lt;") + '</span></div>';
+  }
+  avatarImageFile.addEventListener("change", () => {
+    const f = avatarImageFile.files && avatarImageFile.files[0]; if (!f) return;
+    compressImage(f, (data) => { avatarImageData = data; renderAvatarImage(); });
+  });
+  avatarAudioFile.addEventListener("change", () => {
+    const f = avatarAudioFile.files && avatarAudioFile.files[0]; if (!f) return;
+    if (f.size > 2.5 * 1024 * 1024) { toolStatus(avatarStatus, "warn", "Audio trop lourd (max ~2,5 Mo)."); avatarAudioFile.value = ""; return; }
+    readFile(f, (data) => setAvatarAudio(data, f.name));
+  });
+
+  async function doAvatar() {
+    if (!avatarImageData) { toolStatus(avatarStatus, "warn", "Choisis une image de portrait."); return; }
+    if (!avatarAudioData) { toolStatus(avatarStatus, "warn", "Choisis (ou envoie depuis Voix) un audio."); return; }
+    avatarBtn.disabled = true;
+    toolStatus(avatarStatus, "spinner", "Génération de la vidéo… (1 à 3 min)");
+    avatarResult.innerHTML = "";
+    try {
+      const res = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "avatar", image: avatarImageData, audio: avatarAudioData }) });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || "Échec de la génération.");
+      toolStatus(avatarStatus, "ok", "Vidéo prête ✓");
+      const v = document.createElement("video"); v.src = data.url; v.controls = true; v.autoplay = true; v.loop = true; v.playsInline = true;
+      v.addEventListener("click", () => openLightbox(data.url, "video"));
+      avatarResult.appendChild(v);
+      const line = document.createElement("div"); line.className = "btn-line";
+      const dl = document.createElement("button"); dl.className = "hist-btn grow"; dl.innerHTML = ICON.download + "<span>Télécharger</span>";
+      dl.onclick = () => downloadUrl(data.url);
+      line.appendChild(dl); avatarResult.appendChild(line);
+      saveHistory({ type: "video", prompt: "Avatar parlant", url: data.url, ts: Date.now() });
+    } catch (err) { toolStatus(avatarStatus, "warn", err.message || "Erreur."); }
+    finally { avatarBtn.disabled = false; }
+  }
+  avatarBtn.addEventListener("click", doAvatar);
+
   // Init
   selectTab("image");
   renderHistory();
+  renderVoiceOptions();
   initBackup();
 </script>
 </body>
