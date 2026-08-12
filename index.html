@@ -4,8 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="description" content="Générateur d'images et de vidéos par IA, et chat avec Claude Sonnet 4.6. Outil Dobleyou." />
-<meta name="theme-color" content="#0d0b0c" />
-<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#F6F5F1" />
+<meta name="color-scheme" content="light" />
 <title>Générateur IA — Dobleyou</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -13,30 +13,30 @@
 <style>
   :root {
     --orange: #FF7A1A;
-    --orange-hover: #FF8C38;
-    --orange-soft: rgba(255,122,26,.13);
-    --bg: #0d0b0c;
-    --sidebar: #100e0f;
-    --surface: #1a1517;
-    --surface-2: #221c1e;
-    --line: rgba(255,255,255,.08);
-    --line-strong: rgba(255,255,255,.14);
-    --text: #F3EFEA;
-    --muted: #968F88;
-    --green: #34D399;
-    --red: #F87171;
+    --orange-hover: #F26A00;
+    --orange-soft: rgba(255,122,26,.12);
+    --bg: #F6F5F1;
+    --sidebar: #FFFFFF;
+    --surface: #FFFFFF;
+    --surface-2: #F1EFE9;
+    --line: rgba(20,18,16,.10);
+    --line-strong: rgba(20,18,16,.16);
+    --text: #1B1A18;
+    --muted: #6F6D67;
+    --green: #16A34A;
+    --red: #DC2626;
     --radius: 12px;
     --ease: cubic-bezier(.4, 0, .2, 1);
     --t-fast: .15s var(--ease);
-    --focus: 0 0 0 3px rgba(255,122,26,.45);
+    --focus: 0 0 0 3px rgba(255,122,26,.35);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :focus-visible { outline: none; box-shadow: var(--focus); border-radius: 8px; }
   *:focus:not(:focus-visible) { outline: none; }
   ::selection { background: rgba(255,122,26,.35); color: #fff; }
   ::-webkit-scrollbar { width: 9px; height: 9px; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 99px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.22); }
+  ::-webkit-scrollbar-thumb { background: rgba(20,18,16,.18); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(20,18,16,.30); }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
   body { font-family: 'Poppins', system-ui, sans-serif; color: var(--text); background: var(--bg); line-height: 1.5; min-height: 100vh; }
@@ -148,6 +148,48 @@
   .res-row .lbl-inline { font-size: 12.5px; color: var(--muted); font-weight: 600; }
   .res-row { flex-wrap: wrap; }
   .ctrl-field { display: flex; align-items: center; gap: 8px; }
+
+  /* Interrupteur Multi-Shot */
+  .switch { position: relative; display: inline-flex; width: 38px; height: 22px; cursor: pointer; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch-track { flex: 1; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line-strong); transition: background var(--t-fast), border-color var(--t-fast); }
+  .switch-track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--muted); transition: transform var(--t-fast), background var(--t-fast); }
+  .switch input:checked + .switch-track { background: var(--orange-soft); border-color: var(--orange); }
+  .switch input:checked + .switch-track::after { transform: translateX(16px); background: var(--orange); }
+
+  /* Constructeur de plans (Multi-Shot) */
+  .shots-box { display: none; flex-direction: column; gap: 10px; margin-bottom: 10px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .shots-box.on { display: flex; }
+  .shots-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .shots-head span:first-child { font-size: 13px; font-weight: 700; color: var(--text); }
+  .shots-hint { font-size: 12px; color: var(--muted); }
+  #shotsList { display: flex; flex-direction: column; gap: 10px; }
+  .shot { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--surface-2); }
+  .shot-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .shot-num { font-size: 12.5px; font-weight: 700; color: var(--orange); flex: 1; }
+  .shot-dur { background: var(--surface); border: 1px solid var(--line-strong); color: var(--text); border-radius: 8px; padding: 6px 8px; font-family: inherit; font-size: 12.5px; cursor: pointer; }
+  .shot-del { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 6px; display: flex; }
+  .shot-del svg { width: 15px; height: 15px; }
+  .shot-del:hover { color: var(--red); }
+  .shot textarea { min-height: 60px; font-size: 14px; }
+  .add-shot { align-self: flex-start; background: none; border: 1px dashed var(--line-strong); color: var(--text); border-radius: 9px; padding: 8px 14px; font-family: inherit; font-size: 13px; cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast); }
+  .add-shot:hover { color: var(--orange); border-color: var(--orange); }
+  .add-shot:disabled { opacity: .5; cursor: not-allowed; }
+  .shot-foot { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+  .shot-attach { display: inline-flex; align-items: center; gap: 7px; background: var(--surface); border: 1px solid var(--line-strong); color: var(--muted); border-radius: 9px; padding: 7px 11px; font-family: inherit; font-size: 12.5px; cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast); }
+  .shot-attach svg { width: 15px; height: 15px; }
+  .shot-attach:hover { color: var(--orange); border-color: var(--orange); }
+  .shot-img .attach-chip { margin: 0; }
+
+  /* Résultat en séquence (Multi-Shot) */
+  .shot-seq { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+  .seq-item { display: flex; flex-direction: column; gap: 6px; }
+  .seq-label { font-size: 12.5px; font-weight: 700; color: var(--orange); }
+  .seq-media { border-radius: 10px; overflow: hidden; background: var(--surface-2); border: 1px solid var(--line); min-height: 120px; display: flex; align-items: center; justify-content: center; color: var(--red); font-size: 13px; padding: 8px; text-align: center; }
+  .seq-media video { width: 100%; display: block; border-radius: 10px; cursor: zoom-in; }
+  .seq-media.pending { color: var(--muted); }
+  .seq-dl { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--text); border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: 12.5px; cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast); }
+  .seq-dl:hover { color: var(--orange); border-color: var(--orange); }
   .res-row select { background: var(--surface); border: 1px solid var(--line-strong); color: var(--text); border-radius: 9px; padding: 8px 10px; font-family: inherit; font-size: 13px; cursor: pointer; }
   .res-row select:focus { outline: none; border-color: var(--orange); }
 
@@ -176,6 +218,41 @@
   .lb-close:hover { opacity: 1; color: var(--orange); }
   .msg img { cursor: zoom-in; }
 
+  /* ---------- Accueil (dashboard) ---------- */
+  .home-scroll { flex: 1; min-height: 0; overflow-y: auto; max-width: 1100px; width: 100%; margin: 0 auto; padding: 4px 2px 20px; }
+  .home-hero { margin: 4px 2px 18px; }
+  .home-h2 { font-size: 24px; font-weight: 800; letter-spacing: -.4px; }
+  .home-p { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  .home-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 30px; }
+  .feat-card { display: flex; align-items: center; gap: 14px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; cursor: pointer; font-family: inherit; box-shadow: 0 1px 2px rgba(20,18,16,.04), 0 6px 20px rgba(20,18,16,.05); transition: transform var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast); }
+  .feat-card:hover { transform: translateY(-2px); border-color: var(--orange); box-shadow: 0 4px 14px rgba(255,122,26,.12), 0 10px 30px rgba(20,18,16,.08); }
+  .feat-ic { width: 46px; height: 46px; flex: none; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--orange-soft); color: var(--orange); }
+  .feat-ic svg { width: 24px; height: 24px; }
+  .feat-txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .feat-t { font-size: 15px; font-weight: 700; color: var(--text); }
+  .feat-d { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+  .home-section-head { margin: 0 2px 12px; }
+  .home-h3 { font-size: 16px; font-weight: 700; }
+  .home-hist { display: flex; flex-direction: column; gap: 8px; }
+  .home-hist-empty { color: var(--muted); font-size: 14px; padding: 24px 4px; }
+  .hh-item { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .hh-thumb { width: 52px; height: 52px; flex: none; border-radius: 9px; object-fit: cover; background: var(--surface-2); cursor: zoom-in; }
+  .hh-thumb-ic { width: 52px; height: 52px; flex: none; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: var(--surface-2); color: var(--orange); }
+  .hh-thumb-ic svg { width: 22px; height: 22px; }
+  .hh-meta { flex: 1; min-width: 0; }
+  .hh-badge { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--orange); }
+  .hh-prompt { font-size: 13.5px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hh-date { font-size: 11.5px; color: var(--muted); }
+  .hh-actions { display: flex; gap: 6px; flex: none; }
+  .hh-btn { display: inline-flex; align-items: center; gap: 5px; background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--text); border-radius: 8px; padding: 6px 10px; font-family: inherit; font-size: 12px; cursor: pointer; transition: color var(--t-fast), border-color var(--t-fast); }
+  .hh-btn:hover { color: var(--orange); border-color: var(--orange); }
+  .hh-btn svg { width: 13px; height: 13px; }
+
+  /* Profondeur douce pour le thème clair */
+  .sidebar { box-shadow: 1px 0 0 var(--line); }
+  .card { box-shadow: 0 1px 2px rgba(20,18,16,.04), 0 6px 18px rgba(20,18,16,.05); }
+  @media (max-width: 600px) { .home-cards { grid-template-columns: 1fr; } .hh-prompt { max-width: 46vw; } }
+
   /* ---------- Outils Voix / Avatar ---------- */
   .tool-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 4px 2px 8px; }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
@@ -191,6 +268,8 @@
   .primary-btn:active:not(:disabled) { transform: scale(.98); }
   .primary-btn:disabled { opacity: .55; cursor: not-allowed; }
   .tool-status { font-size: 13px; margin-top: 10px; min-height: 18px; display: flex; align-items: center; gap: 8px; }
+  .tool-status svg { width: 16px; height: 16px; flex: none; }
+  .tool-status .spinner { flex: none; }
   .tool-status.err { color: var(--red); }
   .tool-status.ok { color: var(--green); }
   .attach-chip audio { height: 30px; }
@@ -248,7 +327,11 @@
     </div>
 
     <nav class="nav" role="tablist" aria-label="Mode">
-      <button type="button" class="tab active" data-tab="image" role="tab" aria-selected="true">
+      <button type="button" class="tab active" data-tab="home" role="tab" aria-selected="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg>
+        <span class="tab-label">Accueil</span>
+      </button>
+      <button type="button" class="tab" data-tab="image" role="tab" aria-selected="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 20"/></svg>
         <span class="tab-label">Image</span>
       </button>
@@ -312,8 +395,42 @@
     </header>
 
     <div class="content">
+      <!-- Panneau Accueil (dashboard) -->
+      <div class="panel active" id="homePanel">
+        <div class="home-scroll">
+          <div class="home-hero">
+            <h2 class="home-h2">Que veux-tu créer aujourd'hui ?</h2>
+            <p class="home-p">Choisis un outil pour commencer.</p>
+          </div>
+          <div class="home-cards" id="homeCards">
+            <button type="button" class="feat-card" data-goto="image">
+              <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 20"/></svg></span>
+              <span class="feat-txt"><span class="feat-t">Génération d'image</span><span class="feat-d">Crée des visuels à partir d'une description. FLUX.</span></span>
+            </button>
+            <button type="button" class="feat-card" data-goto="video">
+              <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="14" height="16" rx="2"/><path d="m22 7-6 4 6 4z"/></svg></span>
+              <span class="feat-txt"><span class="feat-t">Génération de vidéo</span><span class="feat-d">Anime une image ou crée une suite narrative multi-plans.</span></span>
+            </button>
+            <button type="button" class="feat-card" data-goto="voice">
+              <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></span>
+              <span class="feat-txt"><span class="feat-t">Voix</span><span class="feat-d">Clone une voix et fais-lui lire n'importe quel texte.</span></span>
+            </button>
+            <button type="button" class="feat-card" data-goto="avatar">
+              <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 21v-1a6 6 0 0 1 12 0v1"/></svg></span>
+              <span class="feat-txt"><span class="feat-t">Avatar</span><span class="feat-d">Une image + un audio → une vidéo parlante (lip-sync).</span></span>
+            </button>
+            <button type="button" class="feat-card" data-goto="chat">
+              <span class="feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+              <span class="feat-txt"><span class="feat-t">Chat</span><span class="feat-d">Discute avec Claude, analyse d'images incluse.</span></span>
+            </button>
+          </div>
+          <div class="home-section-head"><h3 class="home-h3">Histoire des générations</h3></div>
+          <div class="home-hist" id="homeHist"></div>
+        </div>
+      </div>
+
       <!-- Panneau génération (image + vidéo) en mode conversation -->
-      <div class="panel active" id="genPanel">
+      <div class="panel" id="genPanel">
         <div class="thread" id="genLog">
           <div class="thread-empty gen-empty" id="genEmpty">
             <div class="empty-ic" id="genEmptyIc"></div>
@@ -358,6 +475,18 @@
                 <option value="10">10 s</option>
               </select>
             </div>
+            <div class="ctrl-field" id="multiShotField">
+              <label class="switch" title="Suite narrative : plusieurs plans enchaînés">
+                <input type="checkbox" id="multiShotToggle" aria-label="Activer le mode Multi-Shot" />
+                <span class="switch-track"></span>
+              </label>
+              <span class="lbl-inline">Multi-Shot</span>
+            </div>
+          </div>
+          <div class="shots-box" id="shotsBox">
+            <div class="shots-head"><span>Plans — suite narrative</span><span class="shots-hint">Chaque plan : une durée et ce qui s'y passe.</span></div>
+            <div id="shotsList"></div>
+            <button type="button" class="add-shot" id="addShotBtn">+ Ajouter un plan</button>
           </div>
           <div class="attach-row" id="attachRow"></div>
           <div class="chat-row">
@@ -524,6 +653,7 @@
   let currentType = "image";
 
   const tabs = document.querySelectorAll(".tab");
+  const homePanel = document.getElementById("homePanel");
   const genPanel = document.getElementById("genPanel");
   const chatPanel = document.getElementById("chatPanel");
   const voicePanel = document.getElementById("voicePanel");
@@ -548,9 +678,10 @@
       t.classList.toggle("active", on);
       t.setAttribute("aria-selected", on ? "true" : "false");
     });
-    const titles = { image: "Génération d'image", video: "Génération de vidéo", chat: "Chat — Claude Sonnet 4.6", voice: "Voix — clonage & synthèse", avatar: "Avatar — vidéo parlante" };
+    const titles = { home: "Accueil", image: "Génération d'image", video: "Génération de vidéo", chat: "Chat — Claude Sonnet 4.6", voice: "Voix — clonage & synthèse", avatar: "Avatar — vidéo parlante" };
     if (mainTitle) mainTitle.textContent = titles[which] || "Générateur IA";
-    [genPanel, chatPanel, voicePanel, avatarPanel].forEach((p) => p.classList.remove("active"));
+    [homePanel, genPanel, chatPanel, voicePanel, avatarPanel].forEach((p) => p.classList.remove("active"));
+    if (which === "home") { homePanel.classList.add("active"); renderHomeHist(); return; }
     if (which === "chat") { chatPanel.classList.add("active"); return; }
     if (which === "voice") { voicePanel.classList.add("active"); return; }
     if (which === "avatar") { avatarPanel.classList.add("active"); return; }
@@ -569,6 +700,7 @@
       countField.style.display = "none";
       resField.style.display = "flex";
       durField.style.display = "flex";
+      multiShotField.style.display = "flex";
       document.getElementById("prompt").placeholder = "Décris la vidéo (ou le mouvement si tu joins une image/vidéo)…";
       uploadHint.textContent = "Qualité : 720p et 1080p natifs (Kling). « 4K » = qualité max du modèle (rendu en 1080p).";
     } else {
@@ -576,10 +708,13 @@
       countField.style.display = "flex";
       resField.style.display = "none";
       durField.style.display = "none";
+      multiShotField.style.display = "none";
+      multiShotToggle.checked = false;
       clearVideo();
       document.getElementById("prompt").placeholder = "Décris ce que tu veux générer…";
       uploadHint.textContent = "Joins une image pour la transformer (optionnel). ✨ optimise et traduit ton prompt en anglais pour un meilleur rendu.";
     }
+    applyMultiShotUI();
     renderGenEmpty();
   }
 
@@ -837,7 +972,132 @@
     addGenActions(bubble, params, null);
   }
 
+  /* ----- Multi-Shot (suite narrative vidéo) ----- */
+  const multiShotField = document.getElementById("multiShotField");
+  const multiShotToggle = document.getElementById("multiShotToggle");
+  const shotsBox = document.getElementById("shotsBox");
+  const shotsList = document.getElementById("shotsList");
+  const addShotBtn = document.getElementById("addShotBtn");
+  const MAX_SHOTS = 6;
+  const TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+  const IMG_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L6 20"/></svg>';
+
+  function renumberShots() {
+    shotsList.querySelectorAll(".shot").forEach((el, i) => { el.querySelector(".shot-num").textContent = "Plan " + (i + 1); });
+    addShotBtn.disabled = shotsList.children.length >= MAX_SHOTS;
+  }
+  function addShot(desc, dur) {
+    if (shotsList.children.length >= MAX_SHOTS) return;
+    const shot = document.createElement("div");
+    shot.className = "shot";
+    shot.innerHTML =
+      '<div class="shot-head"><span class="shot-num"></span>' +
+      '<select class="shot-dur" aria-label="Durée du plan"><option value="2">2 s</option><option value="3">3 s</option><option value="4">4 s</option><option value="5" selected>5 s</option></select>' +
+      '<button type="button" class="shot-del" aria-label="Supprimer le plan" title="Supprimer">' + TRASH_ICON + '</button></div>' +
+      '<textarea class="shot-desc" placeholder="Décris ce plan : qui est où et ce qui se passe."></textarea>' +
+      '<div class="shot-foot"><label class="shot-attach">' + IMG_ICON + '<span>Image du plan (optionnel)</span><input type="file" accept="image/*" hidden></label><div class="shot-img"></div></div>';
+    shotsList.appendChild(shot);
+    if (desc) shot.querySelector(".shot-desc").value = desc;
+    if (dur) shot.querySelector(".shot-dur").value = String(dur);
+    const fileInput = shot.querySelector(".shot-attach input");
+    const imgBox = shot.querySelector(".shot-img");
+    function renderShotImg() {
+      imgBox.innerHTML = "";
+      if (!shot._imageData) return;
+      const chip = document.createElement("div"); chip.className = "attach-chip";
+      chip.innerHTML = '<img src="' + shot._imageData + '" alt="" /><span>Image</span>';
+      const rm = document.createElement("button"); rm.type = "button"; rm.textContent = "Retirer";
+      rm.onclick = () => { shot._imageData = null; fileInput.value = ""; renderShotImg(); };
+      chip.appendChild(rm); imgBox.appendChild(chip);
+    }
+    fileInput.addEventListener("change", () => {
+      const f = fileInput.files && fileInput.files[0];
+      if (!f) return;
+      compressImage(f, (d) => { shot._imageData = d; renderShotImg(); });
+    });
+    shot.querySelector(".shot-del").addEventListener("click", () => {
+      shot.remove(); renumberShots();
+      if (!shotsList.children.length) addShot();
+    });
+    renumberShots();
+  }
+  function collectShots() {
+    return Array.from(shotsList.querySelectorAll(".shot")).map((el) => ({
+      desc: el.querySelector(".shot-desc").value.trim(),
+      dur: parseInt(el.querySelector(".shot-dur").value, 10) || 5,
+      image: el._imageData || null,
+    })).filter((s) => s.desc || s.image);
+  }
+
+  // Génère un clip par plan (image→vidéo si le plan a une image) et les affiche en séquence
+  async function runMultiShot(shots, note) {
+    genAddUser("Suite narrative — " + shots.length + " plan(s)", null);
+    clearGenEmpty();
+    const bubble = document.createElement("div");
+    bubble.className = "msg bot";
+    const seq = document.createElement("div"); seq.className = "shot-seq";
+    bubble.appendChild(seq);
+    genLog.appendChild(bubble);
+    const slots = shots.map((s, i) => {
+      const item = document.createElement("div"); item.className = "seq-item";
+      item.innerHTML = '<div class="seq-label">Plan ' + (i + 1) + ' · ' + s.dur + 's</div><div class="seq-media pending"><span class="spinner"></span></div>';
+      seq.appendChild(item); return item;
+    });
+    genLog.scrollTop = genLog.scrollHeight;
+    const base = { resolution: resSelect.value, aspectRatio: formatSelect.value };
+    await Promise.all(shots.map((s, i) => {
+      const params = {
+        type: "video",
+        prompt: (s.desc || "animation") + (note ? " Style global : " + note : ""),
+        image: s.image || null,
+        duration: s.dur,
+        resolution: base.resolution,
+        aspectRatio: base.aspectRatio,
+      };
+      return generateOne(params).then((url) => {
+        const media = slots[i].querySelector(".seq-media");
+        media.classList.remove("pending"); media.innerHTML = "";
+        const v = document.createElement("video"); v.src = url; v.controls = true; v.loop = true; v.playsInline = true; v.muted = true;
+        v.addEventListener("click", () => openLightbox(url, "video"));
+        media.appendChild(v);
+        const dl = document.createElement("button"); dl.className = "seq-dl"; dl.type = "button"; dl.textContent = "Télécharger";
+        dl.onclick = () => downloadUrl(url);
+        slots[i].appendChild(dl);
+        saveHistory({ type: "video", prompt: "Plan " + (i + 1) + " : " + (s.desc || ""), url, ts: Date.now() });
+      }).catch((err) => {
+        const media = slots[i].querySelector(".seq-media");
+        media.classList.remove("pending"); media.classList.add("err");
+        media.textContent = "⚠ " + (err.message || "Échec");
+      });
+    }));
+  }
+  function applyMultiShotUI() {
+    const on = currentType === "video" && multiShotToggle.checked;
+    shotsBox.classList.toggle("on", on);
+    durField.style.display = on ? "none" : (currentType === "video" ? "flex" : "none");
+    document.getElementById("prompt").placeholder = on
+      ? "Note de style globale (optionnel) — la séquence vient des plans ci-dessus"
+      : (currentType === "video" ? "Décris la vidéo (ou le mouvement si tu joins une image/vidéo)…" : "Décris ce que tu veux générer…");
+    if (on && !shotsList.children.length) { addShot(); addShot(); }
+  }
+  multiShotToggle.addEventListener("change", applyMultiShotUI);
+  addShotBtn.addEventListener("click", () => addShot());
+
   goBtn.addEventListener("click", async () => {
+    const multiShot = currentType === "video" && multiShotToggle.checked;
+
+    // Mode Multi-Shot : un clip par plan
+    if (multiShot) {
+      const shots = collectShots();
+      if (!shots.length) { setStatus("warn", "Ajoute au moins un plan (description ou image).", true); return; }
+      const note = document.getElementById("prompt").value.trim();
+      setStatus("", "");
+      goBtn.disabled = true;
+      await runMultiShot(shots, note);
+      goBtn.disabled = false;
+      return;
+    }
+
     const prompt = document.getElementById("prompt").value.trim();
     if (!prompt) { setStatus("warn", "Écris d'abord un prompt.", true); return; }
     setStatus("", "");
@@ -934,6 +1194,7 @@
     list.unshift(item);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 40)));
     renderHistory();
+    renderHomeHist();
     writeBackup();
   }
   function renderHistory() {
@@ -986,7 +1247,7 @@
   });
   document.getElementById("histClear").addEventListener("click", () => {
     if (confirm("Effacer tout l'historique ?")) {
-      localStorage.removeItem(HISTORY_KEY); renderHistory();
+      localStorage.removeItem(HISTORY_KEY); renderHistory(); renderHomeHist();
     }
   });
 
@@ -996,6 +1257,7 @@
       app: "generateur-ia", version: 1, exportedAt: new Date().toISOString(),
       generations: JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"),
       chat: JSON.parse(localStorage.getItem("genia_chat") || "[]"),
+      voices: JSON.parse(localStorage.getItem("genia_voices") || "[]"),
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
@@ -1016,6 +1278,7 @@
         }
         if (Array.isArray(data.generations)) localStorage.setItem(HISTORY_KEY, JSON.stringify(data.generations));
         if (Array.isArray(data.chat)) localStorage.setItem("genia_chat", JSON.stringify(data.chat));
+        if (Array.isArray(data.voices)) localStorage.setItem("genia_voices", JSON.stringify(data.voices));
         alert("Historique importé. La page va se recharger.");
         location.reload();
       } catch (err) { alert("Fichier invalide : impossible de lire l'historique."); }
@@ -1053,6 +1316,7 @@
       app: "generateur-ia", version: 1, exportedAt: new Date().toISOString(),
       generations: JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"),
       chat: JSON.parse(localStorage.getItem("genia_chat") || "[]"),
+      voices: JSON.parse(localStorage.getItem("genia_voices") || "[]"),
     };
   }
   async function writeBackup() {
@@ -1453,9 +1717,52 @@
   }
   avatarBtn.addEventListener("click", doAvatar);
 
+  /* ----- Accueil : cartes de fonctions + historique ----- */
+  document.querySelectorAll(".feat-card").forEach((c) => {
+    c.addEventListener("click", () => selectTab(c.dataset.goto));
+  });
+  function renderHomeHist() {
+    const box = document.getElementById("homeHist");
+    if (!box) return;
+    const list = getHistory().slice(0, 8);
+    if (!list.length) { box.innerHTML = '<div class="home-hist-empty">Aucune génération pour l\'instant. Lance-toi avec une carte ci-dessus !</div>'; return; }
+    box.innerHTML = "";
+    list.forEach((it) => {
+      const isImg = it.type === "image";
+      const row = document.createElement("div"); row.className = "hh-item";
+      if (isImg) {
+        const im = document.createElement("img"); im.className = "hh-thumb"; im.src = it.url; im.alt = "";
+        im.addEventListener("click", () => openLightbox(it.url, "image"));
+        row.appendChild(im);
+      } else {
+        const d = document.createElement("div"); d.className = "hh-thumb-ic"; d.innerHTML = ICON.vid;
+        d.addEventListener("click", () => openLightbox(it.url, "video"));
+        row.appendChild(d);
+      }
+      const meta = document.createElement("div"); meta.className = "hh-meta";
+      const badge = document.createElement("div"); badge.className = "hh-badge"; badge.textContent = isImg ? "Image" : "Vidéo";
+      const p = document.createElement("div"); p.className = "hh-prompt"; p.textContent = it.prompt || "(sans description)";
+      const date = document.createElement("div"); date.className = "hh-date";
+      date.textContent = it.ts ? new Date(it.ts).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+      meta.appendChild(badge); meta.appendChild(p); meta.appendChild(date);
+      row.appendChild(meta);
+      const actions = document.createElement("div"); actions.className = "hh-actions";
+      const play = document.createElement("button"); play.className = "hh-btn";
+      play.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span>Voir</span>';
+      play.onclick = () => openLightbox(it.url, isImg ? "image" : "video");
+      const dl = document.createElement("button"); dl.className = "hh-btn";
+      dl.innerHTML = ICON.download + "<span>Télécharger</span>";
+      dl.onclick = () => downloadUrl(it.url);
+      actions.appendChild(play); actions.appendChild(dl);
+      row.appendChild(actions);
+      box.appendChild(row);
+    });
+  }
+
   // Init
-  selectTab("image");
+  selectTab("home");
   renderHistory();
+  renderHomeHist();
   renderVoiceOptions();
   initBackup();
 </script>
