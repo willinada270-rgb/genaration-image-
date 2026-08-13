@@ -177,21 +177,28 @@ export default async function handler(req, res) {
     const model = MODELS[key];
     const input = model.buildInput({ prompt: prompt ? prompt.trim() : "", image, endImage, video, audio, aspectRatio, duration, resolution });
 
-    // 1) Créer la prédiction
-    const createRes = await fetch(`${REPLICATE}/models/${model.slug}/predictions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ input }),
-    });
+    // 1) Créer la prédiction — avec réessai automatique si Replicate throttle (429)
+    let createRes;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      createRes = await fetch(`${REPLICATE}/models/${model.slug}/predictions`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ input }),
+      });
+      if (createRes.status !== 429) break;
+      const ra = parseInt(createRes.headers.get("retry-after") || "0", 10);
+      await new Promise((r) => setTimeout(r, (ra > 0 ? ra : 12) * 1000));
+    }
 
     const created = await createRes.json();
     if (!createRes.ok) {
-      return res.status(createRes.status).json({
-        error: created?.detail || "Erreur Replicate lors du lancement.",
-      });
+      const msg = createRes.status === 429
+        ? "Limite de débit Replicate atteinte. Avec moins de 5 $ de crédit, tu es limité à 6 requêtes/min et 1 à la fois. Ajoute du crédit sur Replicate, ou réessaie dans quelques secondes."
+        : (created?.detail || "Erreur Replicate lors du lancement.");
+      return res.status(createRes.status).json({ error: msg });
     }
 
     // 2) Polling jusqu'à succès / échec (la vidéo peut prendre 1-3 min)
