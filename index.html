@@ -927,10 +927,27 @@
     bubble.appendChild(el);
     genLog.scrollTop = genLog.scrollHeight;
   }
-  function downloadUrl(url) {
-    const a = document.createElement("a");
-    a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.download = "";
-    document.body.appendChild(a); a.click(); a.remove();
+  async function downloadUrl(url, filename) {
+    // Force le vrai téléchargement, y compris pour les URL cross-origin (Replicate)
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("fetch");
+      const blob = await res.blob();
+      let name = filename;
+      if (!name) {
+        const t = blob.type || "";
+        const ext = t.includes("video") ? "mp4" : t.includes("png") ? "png" : t.includes("jpeg") ? "jpg" : t.includes("mpeg") || t.includes("mp3") ? "mp3" : t.includes("wav") ? "wav" : "bin";
+        name = "generation-" + Date.now() + "." + ext;
+      }
+      const objUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objUrl; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
+    } catch (e) {
+      // Repli : ouvrir dans un onglet (clic droit → Enregistrer)
+      window.open(url, "_blank", "noopener");
+    }
   }
   function addGenActions(afterBubble, params, url) {
     const btns = [];
