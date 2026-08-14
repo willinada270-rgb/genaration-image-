@@ -73,13 +73,14 @@ const VIDEO_MODELS = {
       ...(endImage ? { end_image: endImage } : {}),
     }),
   },
+  // Seedance 1.5 Pro : qualité cinéma + audio, bien moins cher que la 2.0. 720p = ~0,07 $/s.
   seedance: {
-    slug: process.env.MODEL_VIDEO_SEEDANCE || "bytedance/seedance-2.0",
+    slug: process.env.MODEL_VIDEO_SEEDANCE || "bytedance/seedance-1.5-pro",
     build: ({ prompt, image, aspectRatio, duration }) => ({
       prompt,
       duration: duration || 5,
       aspect_ratio: aspectRatio || "16:9",
-      resolution: "1080p",
+      resolution: process.env.SEEDANCE_RESOLUTION || "720p",
       ...(image ? { image } : {}),
     }),
   },
