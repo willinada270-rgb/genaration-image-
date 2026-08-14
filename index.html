@@ -492,6 +492,14 @@
                 <option value="4">4</option>
               </select>
             </div>
+            <div class="ctrl-field" id="videoEngineField">
+              <span class="lbl-inline">Moteur vidéo</span>
+              <select id="videoEngineSelect" aria-label="Moteur de génération vidéo">
+                <option value="kling" selected>Kling 2.5</option>
+                <option value="seedance">Seedance 2.0</option>
+                <option value="vidu">Vidu Q3 Pro</option>
+              </select>
+            </div>
             <div class="ctrl-field" id="resField">
               <span class="lbl-inline">Qualité</span>
               <select id="resSelect" aria-label="Qualité du rendu vidéo">
@@ -705,6 +713,8 @@
   const formatSelect = document.getElementById("formatSelect");
   const engineSelect = document.getElementById("engineSelect");
   const engineField = document.getElementById("engineField");
+  const videoEngineSelect = document.getElementById("videoEngineSelect");
+  const videoEngineField = document.getElementById("videoEngineField");
   const countSelect = document.getElementById("countSelect");
   const durSelect = document.getElementById("durSelect");
   const countField = document.getElementById("countField");
@@ -742,6 +752,7 @@
       durField.style.display = "flex";
       multiShotField.style.display = "flex";
       engineField.style.display = "none";
+      videoEngineField.style.display = "flex";
       document.getElementById("prompt").placeholder = "Décris la vidéo / le mouvement (images de début et de fin optionnelles)…";
       uploadHint.textContent = "Optionnel : 1re icône = image de début, 2e = image de fin (Kling anime entre les deux). Rendu 1080p natif (Kling 2.5 Turbo Pro).";
     } else {
@@ -752,6 +763,7 @@
       durField.style.display = "none";
       multiShotField.style.display = "none";
       engineField.style.display = "flex";
+      videoEngineField.style.display = "none";
       multiShotToggle.checked = false;
       clearVideo();
       clearEndImage();
@@ -959,7 +971,7 @@
 
   // Un seul appel au backend → renvoie l'URL du média
   async function generateOne(params) {
-    const { type, prompt, image, endImage, video, resolution, aspectRatio, duration, engine } = params;
+    const { type, prompt, image, endImage, video, resolution, aspectRatio, duration, engine, videoEngine } = params;
     const res = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -972,6 +984,7 @@
         aspectRatio: aspectRatio || undefined,
         duration: duration || undefined,
         engine: engine || undefined,
+        videoEngine: videoEngine || undefined,
       }),
     });
     const data = await res.json();
@@ -1126,6 +1139,7 @@
         duration: s.dur,
         resolution: base.resolution,
         aspectRatio: base.aspectRatio,
+        videoEngine: videoEngineSelect.value,
       };
       const media = slots[i].querySelector(".seq-media");
       try {
@@ -1193,6 +1207,7 @@
       duration: currentType === "video" ? parseInt(durSelect.value, 10) : undefined,
       count: currentType === "image" ? parseInt(countSelect.value, 10) : 1,
       engine: currentType === "image" ? engineSelect.value : undefined,
+      videoEngine: currentType === "video" ? videoEngineSelect.value : undefined,
     };
     document.getElementById("prompt").value = "";
     selectedImageData = null; selectedEndImageData = null; selectedVideoData = null;
