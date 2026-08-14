@@ -59,6 +59,42 @@ const MODELS = {
   },
 };
 
+// Moteurs vidéo au choix (image→vidéo). Chacun a son propre schéma de paramètres.
+// Slugs surchargeables : MODEL_VIDEO, MODEL_VIDEO_SEEDANCE, MODEL_VIDEO_VIDU
+const VIDEO_MODELS = {
+  kling: {
+    slug: process.env.MODEL_VIDEO || "kwaivgi/kling-v2.5-turbo-pro",
+    build: ({ prompt, image, endImage, aspectRatio, duration }) => ({
+      prompt,
+      duration: duration || 5,
+      aspect_ratio: aspectRatio || "16:9",
+      negative_prompt: "blurry, low quality, distorted, deformed, watermark",
+      ...(image ? { start_image: image } : {}),
+      ...(endImage ? { end_image: endImage } : {}),
+    }),
+  },
+  seedance: {
+    slug: process.env.MODEL_VIDEO_SEEDANCE || "bytedance/seedance-2.0",
+    build: ({ prompt, image, aspectRatio, duration }) => ({
+      prompt,
+      duration: duration || 5,
+      aspect_ratio: aspectRatio || "16:9",
+      resolution: "1080p",
+      ...(image ? { image } : {}),
+    }),
+  },
+  vidu: {
+    slug: process.env.MODEL_VIDEO_VIDU || "vidu/q3-pro",
+    build: ({ prompt, image, endImage, aspectRatio, duration }) => ({
+      prompt,
+      duration: duration || 5,
+      aspect_ratio: aspectRatio || "16:9",
+      ...(image ? { start_image: image } : {}),
+      ...(endImage ? { end_image: endImage } : {}),
+    }),
+  },
+};
+
 const REPLICATE = "https://api.replicate.com/v1";
 
 // ---- Moteur GPT Image (OpenAI) ----
@@ -172,15 +208,25 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Clé REPLICATE_API_TOKEN manquante côté serveur." });
     }
 
-    // Choix du modèle : avatar dédié, sinon vidéo→édition si une vidéo est fournie.
-    const key = type === "avatar" ? "avatar" : (type === "video" && video ? "video_edit" : type);
-    const model = MODELS[key];
-    const input = model.buildInput({ prompt: prompt ? prompt.trim() : "", image, endImage, video, audio, aspectRatio, duration, resolution });
+    // Choix du modèle et des paramètres.
+    let slug, input;
+    if (type === "video" && !video) {
+      // Vidéo simple (texte/image → vidéo) : moteur au choix
+      const ve = VIDEO_MODELS[req.body?.videoEngine] || VIDEO_MODELS.kling;
+      slug = ve.slug;
+      input = ve.build({ prompt: prompt ? prompt.trim() : "", image, endImage, aspectRatio, duration });
+    } else {
+      // Avatar, ou vidéo→édition si une vidéo est fournie
+      const key = type === "avatar" ? "avatar" : (type === "video" && video ? "video_edit" : type);
+      const model = MODELS[key];
+      slug = model.slug;
+      input = model.buildInput({ prompt: prompt ? prompt.trim() : "", image, endImage, video, audio, aspectRatio, duration, resolution });
+    }
 
     // 1) Créer la prédiction — avec réessai automatique si Replicate throttle (429)
     let createRes;
     for (let attempt = 0; attempt < 5; attempt++) {
-      createRes = await fetch(`${REPLICATE}/models/${model.slug}/predictions`, {
+      createRes = await fetch(`${REPLICATE}/models/${slug}/predictions`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
