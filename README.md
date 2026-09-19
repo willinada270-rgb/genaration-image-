@@ -1,8 +1,10 @@
 # Générateur IA — Dobleyou
 
 Une page web avec 3 onglets :
-- **Image** (FLUX.2 Pro) et **Vidéo** (Kling) en full qualité, via l'API **Replicate**.
+- **Image** (FLUX.2 Pro / GPT Image) et **Vidéo** (Kling, Seedance, Vidu) via API.
 - **Chat** avec **Claude Sonnet 4.6**, via l'API **Anthropic**.
+- **Voix** avec clonage + synthèse via **Fish Audio S2.1 Pro**.
+- **Avatar** : image + audio → vidéo parlante.
 
 Les clés API restent cachées côté serveur grâce à des functions serverless Vercel.
 
@@ -13,6 +15,7 @@ generateur-ia/
 ├── index.html          → la page (3 onglets : Image / Vidéo / Chat)
 ├── api/generate.js     → function serverless image+vidéo (Replicate)
 ├── api/chat.js         → function serverless chat (Claude Sonnet 4.6)
+├── api/voice.js        → function serverless voix (Fish Audio)
 ├── vercel.json         → autorise les longues générations (vidéo)
 └── package.json
 ```
@@ -48,9 +51,12 @@ Le chat utilise le modèle `claude-sonnet-4-6` (modifiable dans `api/chat.js`, l
 ### Option A — via GitHub (recommandé)
 1. Mets le dossier `generateur-ia/` dans un dépôt GitHub.
 2. Sur https://vercel.com, **New Project → Import** ton dépôt.
-3. Dans **Settings → Environment Variables**, ajoute les **deux** clés :
+3. Dans **Settings → Environment Variables**, ajoute les clés nécessaires :
    - `REPLICATE_API_TOKEN` → ta clé `r8_...`
    - `ANTHROPIC_API_KEY` → ta clé `sk-ant-...`
+   - `FISH_API_KEY` → ta clé Fish Audio
+   - `OPENAI_API_KEY` → optionnel, pour GPT Image direct
+   - `OPENROUTER_API_KEY` → optionnel, pour GPT Image via OpenRouter
 4. Clique **Deploy**. Vercel te donne une URL `https://...vercel.app`.
 
 ### Option B — via le CLI
@@ -94,11 +100,27 @@ Tu paies uniquement à l'usage, directement sur ton crédit Replicate.
 Obligatoires :
 - `REPLICATE_API_TOKEN` → clé Replicate (`r8_...`)
 - `ANTHROPIC_API_KEY` → clé Anthropic (`sk-ant-...`)
+- `FISH_API_KEY` → clé Fish Audio
 
 Optionnelles — pour corriger un slug de modèle obsolète **sans redéployer le code** :
 - `MODEL_IMAGE` (défaut `black-forest-labs/flux-2-pro`)
 - `MODEL_VIDEO` (défaut `kwaivgi/kling-v3-video`)
 - `MODEL_VIDEO_EDIT` (défaut `kwaivgi/kling-v3-omni-video`)
+- `FISH_MODEL` (défaut `s2.1-pro`)
+- `OPENAI_API_KEY`
+- `OPENROUTER_API_KEY`
+- `OPENAI_IMAGE_MODEL` (défaut `gpt-image-1`)
+- `OPENROUTER_IMAGE_MODEL` (défaut `openai/gpt-image-2`)
+
+## Voix Fish Audio
+
+L'onglet **Voix** utilise Fish Audio en mode studio :
+- clonage de voix privée depuis un court extrait audio ;
+- voix d'exemple Fish prêtes à tester avant de cloner une voix ;
+- modèle sélectionnable (`s2.1-pro`, `s2-pro`, `s2.1-pro-free`) ;
+- styles d'interprétation (naturel, narration, pub, storytelling, calme, intense) ;
+- préparation du script avec Claude pour améliorer rythme, pauses, ponctuation et tags Fish (`[calm]`, `[emphasis]`, `[whisper]`, etc.) ;
+- export MP3 ou WAV.
 
 ## Idées d'évolution
 
