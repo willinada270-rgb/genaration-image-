@@ -273,6 +273,9 @@
   select.text-input { cursor: pointer; }
   .btn-line { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
   .btn-line .grow { flex: 1; min-width: 140px; }
+  .voice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+  .voice-grid .lbl { margin-bottom: 6px; }
+  @media (max-width: 760px) { .voice-grid { grid-template-columns: 1fr; } }
   .primary-btn { background: var(--orange); color: #fff; border: none; border-radius: 10px; padding: 11px 16px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background var(--t-fast), transform var(--t-fast), opacity var(--t-fast); }
   .primary-btn:hover:not(:disabled) { background: var(--orange-hover); }
   .primary-btn:active:not(:disabled) { transform: scale(.98); }
@@ -602,11 +605,39 @@
             <div class="card-title">2 · Faire parler / lire un script</div>
             <p class="card-sub">Un mot, une phrase ou un script entier : les textes longs sont découpés automatiquement puis assemblés en un seul audio.</p>
             <label class="lbl" for="voiceSelect">Voix</label>
-            <select class="text-input" id="voiceSelect" aria-label="Choisir une voix clonée"></select>
+            <select class="text-input" id="voiceSelect" aria-label="Choisir une voix Fish ou clonée"></select>
+            <div class="voice-grid">
+              <div>
+                <label class="lbl" for="fishModelSelect">Modèle</label>
+                <select class="text-input" id="fishModelSelect" aria-label="Choisir le modèle Fish">
+                  <option value="s2.1-pro" selected>S2.1 Pro · expressif</option>
+                  <option value="s2-pro">S2 Pro · précis</option>
+                  <option value="s2.1-pro-free">S2.1 Pro Free · test</option>
+                </select>
+              </div>
+              <div>
+                <label class="lbl" for="voiceStyleSelect">Interprétation</label>
+                <select class="text-input" id="voiceStyleSelect" aria-label="Choisir le style vocal">
+                  <option value="natural" selected>Naturel</option>
+                  <option value="narration">Narration posée</option>
+                  <option value="ad">Pub dynamique</option>
+                  <option value="story">Storytelling</option>
+                  <option value="calm">Calme / rassurant</option>
+                  <option value="dramatic">Intense</option>
+                </select>
+              </div>
+              <div>
+                <label class="lbl" for="voiceFormatSelect">Format</label>
+                <select class="text-input" id="voiceFormatSelect" aria-label="Choisir le format audio">
+                  <option value="mp3" selected>MP3</option>
+                  <option value="wav">WAV</option>
+                </select>
+              </div>
+            </div>
             <label class="lbl" for="ttsText" style="margin-top:12px">Texte ou script</label>
             <textarea id="ttsText" rows="8" placeholder="Écris le texte, ou colle ton script complet (narration, monologue…)"></textarea>
             <div class="btn-line">
-              <button class="hist-btn grow" id="ttsImproveBtn">✨ Améliorer le texte</button>
+              <button class="hist-btn grow" id="ttsImproveBtn">Préparer pour Fish</button>
               <button class="primary-btn grow" id="ttsBtn">Générer la voix</button>
             </div>
             <div class="tool-status" id="ttsStatus"></div>
@@ -1601,12 +1632,20 @@
 
   /* ================= Voix (Fish Audio) ================= */
   const VOICES_KEY = "genia_voices";
+  const SAMPLE_VOICES = [
+    { id: "802e3bc2b27e49c2995d23ef70e6ac89", title: "Exemple · homme énergique" },
+    { id: "933563129e564b19a115bedd57b7406a", title: "Exemple · voix anglaise Sarah" },
+    { id: "7f92f8afb8ec43bf81429cc1c9199cb1", title: "Exemple · voix expressive" },
+  ];
   const voiceNameEl = document.getElementById("voiceName");
   const voiceSampleFile = document.getElementById("voiceSampleFile");
   const voiceSampleRow = document.getElementById("voiceSampleRow");
   const cloneBtn = document.getElementById("cloneBtn");
   const cloneStatus = document.getElementById("cloneStatus");
   const voiceSelect = document.getElementById("voiceSelect");
+  const fishModelSelect = document.getElementById("fishModelSelect");
+  const voiceStyleSelect = document.getElementById("voiceStyleSelect");
+  const voiceFormatSelect = document.getElementById("voiceFormatSelect");
   const ttsText = document.getElementById("ttsText");
   const ttsBtn = document.getElementById("ttsBtn");
   const ttsStatus = document.getElementById("ttsStatus");
@@ -1622,19 +1661,60 @@
     el.className = "tool-status" + (kind === "warn" ? " err" : kind === "ok" ? " ok" : "");
     el.innerHTML = text ? icon + "<span>" + text + "</span>" : "";
   }
+  function escHtml(value) {
+    return String(value || "").replace(/[&<>"']/g, (ch) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[ch]);
+  }
   function getVoices() { try { return JSON.parse(localStorage.getItem(VOICES_KEY)) || []; } catch { return []; } }
   function saveVoices(list) { localStorage.setItem(VOICES_KEY, JSON.stringify(list.slice(0, 50))); }
   function renderVoiceOptions() {
     const list = getVoices();
-    voiceSelect.innerHTML = list.length
-      ? list.map((v) => '<option value="' + v.id + '">' + (v.title || "Voix").replace(/</g, "&lt;") + "</option>").join("")
-      : '<option value="">— Clone d\'abord une voix ci-dessus —</option>';
+    const samples = SAMPLE_VOICES.map((v) => '<option value="' + escHtml(v.id) + '">' + escHtml(v.title) + "</option>").join("");
+    const mine = list.length
+      ? '<optgroup label="Mes voix clonées">' + list.map((v) => '<option value="' + escHtml(v.id) + '">' + escHtml(v.title || "Voix") + "</option>").join("") + "</optgroup>"
+      : '<optgroup label="Mes voix clonées"><option value="" disabled>Clone une voix pour l’ajouter ici</option></optgroup>';
+    voiceSelect.innerHTML = '<optgroup label="Exemples Fish">' + samples + "</optgroup>" + mine;
+  }
+  function selectedVoiceSettings() {
+    return {
+      model: fishModelSelect.value || "s2.1-pro",
+      style: voiceStyleSelect.value || "natural",
+      format: voiceFormatSelect.value || "mp3",
+    };
+  }
+  function styleLabel(style) {
+    return ({
+      natural: "naturel",
+      narration: "narration posée",
+      ad: "publicité dynamique",
+      story: "storytelling immersif",
+      calm: "voix calme et rassurante",
+      dramatic: "interprétation intense",
+    })[style] || "naturel";
+  }
+  function decorateForFish(text, style) {
+    const clean = text.trim();
+    if (!clean || /\[[^\]]+\]/.test(clean)) return clean;
+    const tags = {
+      natural: "",
+      narration: "[calm] ",
+      ad: "[excited] ",
+      story: "[storytelling] ",
+      calm: "[warm] ",
+      dramatic: "[dramatic] ",
+    };
+    return (tags[style] || "") + clean;
   }
 
   voiceSampleFile.addEventListener("change", () => {
     const f = voiceSampleFile.files && voiceSampleFile.files[0];
     if (!f) return;
-    if (f.size > 2.5 * 1024 * 1024) { toolStatus(cloneStatus, "warn", "Fichier trop lourd (max ~2,5 Mo). Prends un extrait plus court en mp3."); voiceSampleFile.value = ""; return; }
+    if (f.size > 4 * 1024 * 1024) { toolStatus(cloneStatus, "warn", "Fichier trop lourd (max ~4 Mo). Prends un extrait plus court en mp3."); voiceSampleFile.value = ""; return; }
     readFile(f, (data) => {
       voiceSampleData = data;
       voiceSampleRow.innerHTML = '<div class="attach-chip"><span class="ic">' + ICON.vid + '</span><span>' + f.name.replace(/</g, "&lt;") + '</span></div>';
@@ -1735,9 +1815,15 @@
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     return bytes.buffer;
   }
-  async function ttsChunk(refId, text) {
+  async function ttsChunk(refId, text, settings) {
     const res = await fetch("/api/voice", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "tts", reference_id: refId, text }) });
+      body: JSON.stringify({
+        action: "tts",
+        reference_id: refId,
+        text: decorateForFish(text, settings.style),
+        model: settings.model,
+        format: settings.format,
+      }) });
     const data = await res.json();
     if (!res.ok || !data.audio) throw new Error(data.error || "Échec de la synthèse.");
     return data.audio;
@@ -1750,14 +1836,15 @@
     if (!text) { toolStatus(ttsStatus, "warn", "Écris le texte ou colle ton script."); return; }
     ttsBtn.disabled = true;
     ttsResult.innerHTML = "";
+    const settings = selectedVoiceSettings();
     const chunks = splitScript(text, 1500);
     try {
       // Cas simple : un seul segment → mp3 direct
       if (chunks.length === 1) {
-        toolStatus(ttsStatus, "spinner", "Génération de la voix…");
-        const uri = await ttsChunk(refId, chunks[0]);
+        toolStatus(ttsStatus, "spinner", "Génération Fish " + settings.model + " · " + styleLabel(settings.style) + "…");
+        const uri = await ttsChunk(refId, chunks[0], settings);
         toolStatus(ttsStatus, "ok", "Voix générée ✓");
-        showTtsResult(uri, "voix.mp3", uri);
+        showTtsResult(uri, "voix." + settings.format, uri);
         return;
       }
       // Script long : on synthétise chaque segment puis on assemble
@@ -1765,7 +1852,7 @@
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       for (let i = 0; i < chunks.length; i++) {
         toolStatus(ttsStatus, "spinner", "Génération… segment " + (i + 1) + "/" + chunks.length);
-        const uri = await ttsChunk(refId, chunks[i]);
+        const uri = await ttsChunk(refId, chunks[i], settings);
         decoded.push(await ctx.decodeAudioData(dataUriToArrayBuffer(uri)));
       }
       toolStatus(ttsStatus, "spinner", "Assemblage de l'audio…");
@@ -1785,20 +1872,21 @@
   async function improveTtsText() {
     const raw = ttsText.value.trim();
     if (!raw) { toolStatus(ttsStatus, "warn", "Écris d'abord le texte à améliorer."); return; }
+    const settings = selectedVoiceSettings();
     ttsImproveBtn.disabled = true;
-    toolStatus(ttsStatus, "spinner", "Amélioration du texte…");
+    toolStatus(ttsStatus, "spinner", "Préparation Fish · " + styleLabel(settings.style) + "…");
     try {
       const res = await fetch("/api/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          system: "You refine text for natural-sounding text-to-speech narration. Keep the SAME language as the input. Improve punctuation, rhythm and phrasing so it reads smoothly aloud (natural pauses via commas and periods, spell out abbreviations and numbers where it helps clarity), while keeping the meaning and tone intact. Do NOT add commentary, titles, quotes or stage directions. Output ONLY the improved text.",
+          system: "You prepare scripts for Fish Audio text-to-speech. Keep the SAME language and meaning. Style target: " + styleLabel(settings.style) + ". Improve punctuation, breathing, oral rhythm and sentence length. Spell out numbers and abbreviations when it improves clarity. You may add sparse Fish-style direction tags in square brackets such as [calm], [warm], [excited], [emphasis], [whisper], [dramatic], but only where they improve performance. Do not over-tag. Do NOT add commentary, titles, quotes, bullet points, scene directions, or explanations. Output ONLY the final script.",
           messages: [{ role: "user", content: raw }],
         }),
       });
       const data = await res.json();
       if (!res.ok || !data.reply) throw new Error(data.error || "Échec de l'amélioration.");
       ttsText.value = data.reply.trim();
-      toolStatus(ttsStatus, "ok", "Texte amélioré ✓");
+      toolStatus(ttsStatus, "ok", "Script préparé pour Fish ✓");
     } catch (err) { toolStatus(ttsStatus, "warn", err.message || "Erreur."); }
     finally { ttsImproveBtn.disabled = false; }
   }
