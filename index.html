@@ -586,7 +586,7 @@
         <div class="tool-scroll">
           <div class="card">
             <div class="card-title">1 · Cloner une voix</div>
-            <p class="card-sub">Envoie un échantillon audio clair (10 s min, voix seule, sans musique). Formats : mp3, wav, m4a. Max ~4 Mo.</p>
+            <p class="card-sub">Envoie un échantillon audio clair (10 à 30 s, voix seule, sans musique). Formats conseillés : mp3 ou m4a. Max ~2,8 Mo.</p>
             <label class="lbl" for="voiceName">Nom de la voix</label>
             <input class="text-input" type="text" id="voiceName" placeholder="Ex. Ma voix" />
             <div class="attach-row" id="voiceSampleRow"></div>
@@ -1670,6 +1670,17 @@
       "'": "&#39;",
     })[ch]);
   }
+  async function readApiJson(res) {
+    const text = await res.text();
+    try { return text ? JSON.parse(text) : {}; }
+    catch {
+      const lower = text.toLowerCase();
+      if (res.status === 413 || lower.includes("request entity too large")) {
+        return { error: "Fichier trop lourd pour Vercel. Utilise un extrait plus court, idéalement en mp3 ou m4a." };
+      }
+      return { error: text.slice(0, 180) || "Réponse serveur invalide." };
+    }
+  }
   function getVoices() { try { return JSON.parse(localStorage.getItem(VOICES_KEY)) || []; } catch { return []; } }
   function saveVoices(list) { localStorage.setItem(VOICES_KEY, JSON.stringify(list.slice(0, 50))); }
   function renderVoiceOptions() {
@@ -1714,8 +1725,15 @@
   voiceSampleFile.addEventListener("change", () => {
     const f = voiceSampleFile.files && voiceSampleFile.files[0];
     if (!f) return;
-    if (f.size > 4 * 1024 * 1024) { toolStatus(cloneStatus, "warn", "Fichier trop lourd (max ~4 Mo). Prends un extrait plus court en mp3."); voiceSampleFile.value = ""; return; }
+    if (f.size > 2.8 * 1024 * 1024) { toolStatus(cloneStatus, "warn", "Fichier trop lourd pour Vercel (max ~2,8 Mo ici). Exporte 10 à 30 s en mp3 ou m4a."); voiceSampleFile.value = ""; return; }
     readFile(f, (data) => {
+      if (data.length > 3.7 * 1024 * 1024) {
+        voiceSampleData = null;
+        voiceSampleFile.value = "";
+        voiceSampleRow.innerHTML = "";
+        toolStatus(cloneStatus, "warn", "Échantillon trop lourd après encodage. Convertis-le en mp3/m4a ou garde 10 à 30 secondes.");
+        return;
+      }
       voiceSampleData = data;
       voiceSampleRow.innerHTML = '<div class="attach-chip"><span class="ic">' + ICON.vid + '</span><span>' + f.name.replace(/</g, "&lt;") + '</span></div>';
       toolStatus(cloneStatus, "", "");
@@ -1730,7 +1748,7 @@
     try {
       const res = await fetch("/api/voice", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "clone", title, audio: voiceSampleData }) });
-      const data = await res.json();
+      const data = await readApiJson(res);
       if (!res.ok || !data.id) throw new Error(data.error || "Échec du clonage.");
       const list = getVoices(); list.unshift({ id: data.id, title, ts: Date.now() }); saveVoices(list);
       renderVoiceOptions(); voiceSelect.value = data.id;
@@ -1824,7 +1842,7 @@
         model: settings.model,
         format: settings.format,
       }) });
-    const data = await res.json();
+    const data = await readApiJson(res);
     if (!res.ok || !data.audio) throw new Error(data.error || "Échec de la synthèse.");
     return data.audio;
   }
