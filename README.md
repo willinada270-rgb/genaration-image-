@@ -117,6 +117,7 @@ Optionnelles — pour corriger un slug de modèle obsolète **sans redéployer l
 L'onglet **Voix** utilise Fish Audio en mode studio :
 - clonage de voix privée depuis un court extrait audio ;
 - voix d'exemple Fish prêtes à tester avant de cloner une voix ;
+- interface Composer inspirée de Google AI Studio : Scene, Sample Context et blocs de parole ;
 - modèle sélectionnable (`s2.1-pro`, `s2-pro`, `s2.1-pro-free`) ;
 - styles d'interprétation (naturel, narration, pub, storytelling, calme, intense) ;
 - préparation du script avec Claude pour améliorer rythme, pauses, ponctuation et tags Fish (`[calm]`, `[emphasis]`, `[whisper]`, etc.) ;
