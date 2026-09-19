@@ -2,6 +2,12 @@
   "functions": {
     "api/generate.js": {
       "maxDuration": 300
+    },
+    "api/voice.js": {
+      "maxDuration": 300
+    },
+    "api/chat.js": {
+      "maxDuration": 60
     }
   }
 }
