@@ -4,12 +4,10 @@
 //   action "tts"   : { reference_id, text }             -> { audio (data URI mp3) }
 //
 // Variable d'environnement requise : FISH_API_KEY
-// Le modèle TTS est surchargeable via FISH_MODEL (défaut "s2.1-pro").
+// Le modèle TTS est surchargeable via FISH_MODEL (défaut "s2-pro").
 
 const FISH_BASE = "https://api.fish.audio";
-const FISH_MODEL = process.env.FISH_MODEL || "s2.1-pro";
-const ALLOWED_MODELS = new Set(["s2.1-pro", "s2.1-pro-free", "s2-pro"]);
-const ALLOWED_FORMATS = new Set(["mp3", "wav", "pcm"]);
+const FISH_MODEL = process.env.FISH_MODEL || "s2-pro";
 
 // Décode une data URI "data:audio/mpeg;base64,XXXX" -> { mime, buffer }
 function parseDataUri(uri) {
@@ -23,19 +21,6 @@ function extFromMime(mime) {
   if (/mp4|m4a|aac/.test(mime)) return "m4a";
   if (/ogg|opus/.test(mime)) return "opus";
   return "mp3";
-}
-function pickModel(model) {
-  const value = String(model || FISH_MODEL).trim();
-  return ALLOWED_MODELS.has(value) ? value : FISH_MODEL;
-}
-function pickFormat(format) {
-  const value = String(format || "mp3").trim().toLowerCase();
-  return ALLOWED_FORMATS.has(value) ? value : "mp3";
-}
-function mimeForFormat(format) {
-  if (format === "wav") return "audio/wav";
-  if (format === "pcm") return "audio/L16";
-  return "audio/mpeg";
 }
 
 export default async function handler(req, res) {
@@ -83,8 +68,6 @@ export default async function handler(req, res) {
     // ---------- 2) Synthèse vocale ----------
     if (action === "tts") {
       const { reference_id, text } = req.body || {};
-      const model = pickModel(req.body?.model);
-      const format = pickFormat(req.body?.format);
       if (!reference_id) return res.status(400).json({ error: "reference_id manquant (clone une voix d'abord)." });
       if (!text || !text.trim()) return res.status(400).json({ error: "Texte vide." });
 
@@ -93,9 +76,9 @@ export default async function handler(req, res) {
         headers: {
           Authorization: `Bearer ${key}`,
           "Content-Type": "application/json",
-          model,
+          model: FISH_MODEL,
         },
-        body: JSON.stringify({ text: text.trim(), reference_id, format }),
+        body: JSON.stringify({ text: text.trim(), reference_id, format: "mp3" }),
       });
 
       if (!r.ok) {
@@ -104,8 +87,8 @@ export default async function handler(req, res) {
       }
 
       const buf = Buffer.from(await r.arrayBuffer());
-      const dataUri = `${mimeForFormat(format)};base64,${buf.toString("base64")}`;
-      return res.status(200).json({ audio: "data:" + dataUri, model, format });
+      const dataUri = "data:audio/mpeg;base64," + buf.toString("base64");
+      return res.status(200).json({ audio: dataUri });
     }
 
     return res.status(400).json({ error: "Action inconnue (clone ou tts)." });

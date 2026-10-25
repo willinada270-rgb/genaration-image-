@@ -16,13 +16,14 @@ const MODELS = {
   // Image — FLUX.2 Pro
   image: {
     slug: SLUGS.image,
-    buildInput: ({ prompt, image, aspectRatio }) => ({
+    buildInput: ({ prompt, image, aspectRatio, seed }) => ({
       prompt,
       aspect_ratio: aspectRatio || "16:9",
       output_format: "png",
       safety_tolerance: 2,
       // Image de référence (image-to-image). Param selon modèle : image_prompt / input_image.
       ...(image ? { image_prompt: image } : {}),
+      ...(seed != null ? { seed } : {}),
     }),
   },
   // Vidéo — Kling v3 (texte→vidéo et image→vidéo, audio, jusqu'à 15 s)
@@ -61,14 +62,16 @@ const MODELS = {
 
 // Moteurs vidéo au choix (image→vidéo). Chacun a son propre schéma de paramètres.
 // Slugs surchargeables : MODEL_VIDEO, MODEL_VIDEO_SEEDANCE, MODEL_VIDEO_VIDU
+// seed / negativePrompt ne sont appliqués QUE là où le modèle les supporte
+// (un paramètre inconnu = erreur 400 chez Replicate).
 const VIDEO_MODELS = {
   kling: {
     slug: process.env.MODEL_VIDEO || "kwaivgi/kling-v2.5-turbo-pro",
-    build: ({ prompt, image, endImage, aspectRatio, duration }) => ({
+    build: ({ prompt, image, endImage, aspectRatio, duration, negativePrompt }) => ({
       prompt,
       duration: duration || 5,
       aspect_ratio: aspectRatio || "16:9",
-      negative_prompt: "blurry, low quality, distorted, deformed, watermark",
+      negative_prompt: negativePrompt || "blurry, low quality, distorted, deformed, watermark",
       ...(image ? { start_image: image } : {}),
       ...(endImage ? { end_image: endImage } : {}),
     }),
@@ -76,12 +79,13 @@ const VIDEO_MODELS = {
   // Seedance 1.5 Pro : qualité cinéma + audio, bien moins cher que la 2.0. 720p = ~0,07 $/s.
   seedance: {
     slug: process.env.MODEL_VIDEO_SEEDANCE || "bytedance/seedance-1.5-pro",
-    build: ({ prompt, image, aspectRatio, duration }) => ({
+    build: ({ prompt, image, aspectRatio, duration, seed }) => ({
       prompt,
       duration: duration || 5,
       aspect_ratio: aspectRatio || "16:9",
       resolution: process.env.SEEDANCE_RESOLUTION || "720p",
       ...(image ? { image } : {}),
+      ...(seed != null ? { seed } : {}),
     }),
   },
   vidu: {
@@ -140,7 +144,7 @@ async function openaiImage({ key, prompt, aspectRatio, image }) {
 // ---- Moteur GPT Image 2 via OpenRouter (moins cher que l'API OpenAI directe) ----
 const OPENROUTER_IMAGES = "https://openrouter.ai/api/v1/images";
 const OPENROUTER_IMAGE_MODEL = process.env.OPENROUTER_IMAGE_MODEL || "openai/gpt-image-2";
-async function openrouterImage({ key, prompt, aspectRatio, image }) {
+async function openrouterImage({ key, prompt, aspectRatio, image, seed }) {
   const finalPrompt = image
     ? "Using the attached reference image as the base, transform it as follows while keeping its overall composition, framing and main subject: " + prompt
     : prompt;
@@ -151,6 +155,7 @@ async function openrouterImage({ key, prompt, aspectRatio, image }) {
     quality: "high",
     n: 1,
   };
+  if (seed != null) body.seed = seed;
   if (image) body.input_references = [{ type: "image_url", image_url: { url: image } }];
   const r = await fetch(OPENROUTER_IMAGES, {
     method: "POST",
@@ -175,6 +180,9 @@ export default async function handler(req, res) {
     const endImage = req.body?.endImage;                  // data URI ou URL (image de fin, vidéo)
     const video = req.body?.video;                        // data URI ou URL (vidéo de départ)
     const audio = req.body?.audio;                        // data URI ou URL (pour l'avatar)
+    const seedRaw = req.body?.seed;
+    const seed = (seedRaw === 0 || (seedRaw && !isNaN(parseInt(seedRaw, 10)))) ? parseInt(seedRaw, 10) : null;
+    const negativePrompt = (req.body?.negativePrompt || "").trim() || null;
 
     if (!type || (type !== "image" && type !== "video" && type !== "avatar")) {
       return res.status(400).json({ error: "Type invalide (image, video ou avatar)." });
@@ -199,7 +207,7 @@ export default async function handler(req, res) {
     if (type === "image" && engine === "openrouter") {
       const okey = process.env.OPENROUTER_API_KEY;
       if (!okey) return res.status(500).json({ error: "Clé OPENROUTER_API_KEY manquante côté serveur." });
-      const url = await openrouterImage({ key: okey, prompt: prompt.trim(), aspectRatio, image });
+      const url = await openrouterImage({ key: okey, prompt: prompt.trim(), aspectRatio, image, seed });
       return res.status(200).json({ url });
     }
 
@@ -215,13 +223,13 @@ export default async function handler(req, res) {
       // Vidéo simple (texte/image → vidéo) : moteur au choix
       const ve = VIDEO_MODELS[req.body?.videoEngine] || VIDEO_MODELS.kling;
       slug = ve.slug;
-      input = ve.build({ prompt: prompt ? prompt.trim() : "", image, endImage, aspectRatio, duration });
+      input = ve.build({ prompt: prompt ? prompt.trim() : "", image, endImage, aspectRatio, duration, seed, negativePrompt });
     } else {
       // Avatar, ou vidéo→édition si une vidéo est fournie
       const key = type === "avatar" ? "avatar" : (type === "video" && video ? "video_edit" : type);
       const model = MODELS[key];
       slug = model.slug;
-      input = model.buildInput({ prompt: prompt ? prompt.trim() : "", image, endImage, video, audio, aspectRatio, duration, resolution });
+      input = model.buildInput({ prompt: prompt ? prompt.trim() : "", image, endImage, video, audio, aspectRatio, duration, resolution, seed });
     }
 
     // 1) Créer la prédiction — avec réessai automatique si Replicate throttle (429)
