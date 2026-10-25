@@ -1,10 +1,8 @@
 # Générateur IA — Dobleyou
 
 Une page web avec 3 onglets :
-- **Image** (FLUX.2 Pro / GPT Image) et **Vidéo** (Kling, Seedance, Vidu) via API.
+- **Image** (FLUX.2 Pro) et **Vidéo** (Kling) en full qualité, via l'API **Replicate**.
 - **Chat** avec **Claude Sonnet 4.6**, via l'API **Anthropic**.
-- **Voix** avec clonage + synthèse via **Fish Audio S2.1 Pro**.
-- **Avatar** : image + audio → vidéo parlante.
 
 Les clés API restent cachées côté serveur grâce à des functions serverless Vercel.
 
@@ -15,7 +13,6 @@ generateur-ia/
 ├── index.html          → la page (3 onglets : Image / Vidéo / Chat)
 ├── api/generate.js     → function serverless image+vidéo (Replicate)
 ├── api/chat.js         → function serverless chat (Claude Sonnet 4.6)
-├── api/voice.js        → function serverless voix (Fish Audio)
 ├── vercel.json         → autorise les longues générations (vidéo)
 └── package.json
 ```
@@ -51,12 +48,9 @@ Le chat utilise le modèle `claude-sonnet-4-6` (modifiable dans `api/chat.js`, l
 ### Option A — via GitHub (recommandé)
 1. Mets le dossier `generateur-ia/` dans un dépôt GitHub.
 2. Sur https://vercel.com, **New Project → Import** ton dépôt.
-3. Dans **Settings → Environment Variables**, ajoute les clés nécessaires :
+3. Dans **Settings → Environment Variables**, ajoute les **deux** clés :
    - `REPLICATE_API_TOKEN` → ta clé `r8_...`
    - `ANTHROPIC_API_KEY` → ta clé `sk-ant-...`
-   - `FISH_API_KEY` → ta clé Fish Audio
-   - `OPENAI_API_KEY` → optionnel, pour GPT Image direct
-   - `OPENROUTER_API_KEY` → optionnel, pour GPT Image via OpenRouter
 4. Clique **Deploy**. Vercel te donne une URL `https://...vercel.app`.
 
 ### Option B — via le CLI
@@ -100,28 +94,29 @@ Tu paies uniquement à l'usage, directement sur ton crédit Replicate.
 Obligatoires :
 - `REPLICATE_API_TOKEN` → clé Replicate (`r8_...`)
 - `ANTHROPIC_API_KEY` → clé Anthropic (`sk-ant-...`)
-- `FISH_API_KEY` → clé Fish Audio
+- `FISH_API_KEY` → clé Fish Audio (pour les onglets Voix — clonage & synthèse)
+
+Pour les moteurs GPT Image (onglet Image → sélecteur « Moteur ») :
+- **OpenRouter (défaut, moins cher ~0,13 $/image)** : `OPENROUTER_API_KEY` (`sk-or-...`). Optionnel : `OPENROUTER_IMAGE_MODEL` (défaut `openai/gpt-image-2`).
+- **OpenAI direct (~0,25 $/image)** : `OPENAI_API_KEY` (`sk-...`). Optionnel : `OPENAI_IMAGE_MODEL` (défaut `gpt-image-1`).
 
 Optionnelles — pour corriger un slug de modèle obsolète **sans redéployer le code** :
 - `MODEL_IMAGE` (défaut `black-forest-labs/flux-2-pro`)
-- `MODEL_VIDEO` (défaut `kwaivgi/kling-v3-video`)
+- `MODEL_VIDEO` (défaut `kwaivgi/kling-v2.5-turbo-pro`, 1080p natif) — moteur « Kling 2.5 »
+- `MODEL_VIDEO_SEEDANCE` (défaut `bytedance/seedance-1.5-pro`, ~0,07 $/s en 720p) — moteur « Seedance ». Mets `bytedance/seedance-2.0` pour le premium (plus cher).
+- `SEEDANCE_RESOLUTION` (défaut `720p`) — passe à `1080p` si tu veux plus de qualité (plus cher)
+- `MODEL_VIDEO_VIDU` (défaut `vidu/q3-pro`) — moteur « Vidu Q3 Pro » (début→fin)
 - `MODEL_VIDEO_EDIT` (défaut `kwaivgi/kling-v3-omni-video`)
-- `FISH_MODEL` (défaut `s2.1-pro`)
-- `OPENAI_API_KEY`
-- `OPENROUTER_API_KEY`
-- `OPENAI_IMAGE_MODEL` (défaut `gpt-image-1`)
-- `OPENROUTER_IMAGE_MODEL` (défaut `openai/gpt-image-2`)
+- `MODEL_AVATAR` (défaut `kwaivgi/kling-avatar-v2`) — onglet Avatar (vidéo parlante)
+- `FISH_MODEL` (défaut `s2-pro`) — modèle TTS Fish Audio
 
-## Voix Fish Audio
+## Onglets Voix & Avatar
 
-L'onglet **Voix** utilise Fish Audio en mode studio :
-- clonage de voix privée depuis un court extrait audio ;
-- voix d'exemple Fish prêtes à tester avant de cloner une voix ;
-- interface Composer inspirée de Google AI Studio : Scene, Sample Context et blocs de parole ;
-- modèle sélectionnable (`s2.1-pro`, `s2-pro`, `s2.1-pro-free`) ;
-- styles d'interprétation (naturel, narration, pub, storytelling, calme, intense) ;
-- préparation du script avec Claude pour améliorer rythme, pauses, ponctuation et tags Fish (`[calm]`, `[emphasis]`, `[whisper]`, etc.) ;
-- export MP3 ou WAV.
+- **Voix** (Fish Audio) : clone une voix depuis un échantillon (10 s+, mp3, max ~2,5 Mo) → obtiens un `reference_id` réutilisable, puis génère de la parole. Les voix sont mémorisées localement.
+- **Avatar** (Kling sur Replicate) : image de portrait + audio → vidéo parlante (lip-sync). Un bouton « Envoyer vers Avatar » passe l'audio généré dans l'onglet Voix directement à l'Avatar.
+
+> ⚠️ Vérifie le slug et les noms de paramètres du modèle avatar sur https://replicate.com/kwaivgi/kling-avatar-v2 (champs `image` / `audio`). Si le modèle attend d'autres noms, ajuste `buildInput` dans `api/generate.js` (objet `MODELS.avatar`).
+> Cloner une voix exige le **consentement** de la personne concernée.
 
 ## Idées d'évolution
 
