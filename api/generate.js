@@ -53,9 +53,11 @@ const MODELS = {
   // Noms de paramètres selon le modèle Replicate ; ajuste si besoin (image / audio).
   avatar: {
     slug: SLUGS.avatar,
-    buildInput: ({ image, audio }) => ({
+    buildInput: ({ image, audio, prompt }) => ({
       image,
       audio,
+      // Prompt optionnel : affine le ton/style d'animation (ex. "professional", "enthusiastic").
+      ...(prompt ? { prompt } : {}),
     }),
   },
 };
